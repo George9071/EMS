@@ -50,12 +50,12 @@ public class Personnel {
     @Column(name = "skills")
     String skills;
 
-    @Column(name = "gender")
+    @Column(name = "profile_image")
     @Builder.Default
     String avatar = null;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "profile_image")
+    @Column(name = "gender")
     Gender gender;
 
     @OneToOne
