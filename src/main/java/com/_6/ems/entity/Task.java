@@ -52,5 +52,5 @@ public class Task {
 
     @OneToMany(mappedBy = "task", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     @Builder.Default
-    List<File> files = new ArrayList<>();;
+    List<File> files = new ArrayList<>();
 }

@@ -3,13 +3,9 @@ package com._6.ems.configuration;
 import com._6.ems.dto.request.IntrospectRequest;
 import com._6.ems.service.AuthenticationService;
 import com.nimbusds.jose.JOSEException;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
-import lombok.experimental.FieldDefaults;
-import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -30,8 +26,7 @@ public class CustomJwtDecoder implements JwtDecoder {
     @Value("${jwt.signerKey}")
     private String signerKey;
 
-    @Autowired
-    private AuthenticationService authenticationService;
+    private final AuthenticationService authenticationService;
 
     private NimbusJwtDecoder nimbusJwtDecoder = null;
 
