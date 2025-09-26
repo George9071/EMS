@@ -25,4 +25,6 @@ public interface MeetingBookingRepository extends JpaRepository<MeetingBooking, 
         WHERE mb.organizerCode = :userCode OR a.attendeeCode = :userCode
     """)
     List<MeetingBooking> findBookingsByUserCode(@Param("userCode") String userCode);
+
+    boolean existsByRoomIdAndStartTimeBeforeAndEndTimeAfter(Long roomId, LocalDateTime startTime, LocalDateTime endTime);
 }

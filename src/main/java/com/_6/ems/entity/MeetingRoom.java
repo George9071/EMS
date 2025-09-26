@@ -21,9 +21,6 @@ public class MeetingRoom {
     @Column(name = "capacity", nullable = false)
     private Integer capacity;
 
-    @Column(name = "is_available", nullable = false)
-    private Boolean isAvailable = true;
-
     private String location;
 
     @Column(name = "equipment")

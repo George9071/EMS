@@ -10,7 +10,6 @@ import java.util.List;
 
 @Repository
 public interface MeetingRoomRepository extends JpaRepository<MeetingRoom, Long> {
-    List<MeetingRoom> findByIsAvailableTrue();
 
     @Query("SELECT r FROM MeetingRoom r WHERE r.id NOT IN " +
             "(SELECT b.roomId FROM MeetingBooking b WHERE " +

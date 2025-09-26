@@ -22,12 +22,6 @@ public class MeetingRoomController {
         return ResponseEntity.ok(ApiResponse.success(rooms));
     }
 
-    @GetMapping("/available")
-    public ResponseEntity<ApiResponse<List<MeetingRoomResponse>>> getAvailableRooms() {
-        List<MeetingRoomResponse> rooms = roomService.getAvailableRooms();
-        return ResponseEntity.ok(ApiResponse.success(rooms));
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<MeetingRoomResponse>> getRoomById(@PathVariable Long id) {
         MeetingRoomResponse room = roomService.getRoomById(id);
