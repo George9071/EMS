@@ -30,16 +30,16 @@ public class AccountController {
     AccountService accountService;
     AccountMapper accountMapper;
 
-    @PostMapping
-    ApiResponse<AccountResponse> createAccount(@RequestBody @Valid AccountCreationRequest request){
-        log.info("Controller: create account");
-
-        ApiResponse<AccountResponse> apiResponse = new ApiResponse<>();
-
-        apiResponse.setResult(accountMapper.toAccountResponse(accountService.createAccount(request)));
-
-        return apiResponse;
-    }
+//    @PostMapping
+//    ApiResponse<AccountResponse> createAccount(@RequestBody @Valid AccountCreationRequest request){
+//        log.info("Controller: create account");
+//
+//        ApiResponse<AccountResponse> apiResponse = new ApiResponse<>();
+//
+//        apiResponse.setResult(accountMapper.toAccountResponse(accountService.createAccount(request)));
+//
+//        return apiResponse;
+//    }
 
     @GetMapping
     ApiResponse<List<AccountResponse>> getAccounts(){

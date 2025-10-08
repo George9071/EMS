@@ -19,7 +19,6 @@ import com._6.ems.utils.SecurityUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,6 +59,16 @@ public class PersonnelService {
         personnel.setPrivileges(Set.of(privilege));
 
         return personnelRepository.save(personnel);
+    }
+
+    @Transactional
+    public PersonnelResponse deletePersonnel(String code) {
+        Personnel personnel = personnelRepository.findById(code)
+                .orElseThrow(() -> new AppException(ErrorCode.PERSONNEL_NOT_FOUND));
+        Account account = personnel.getAccount();
+        accountRepository.delete(account);
+        personnelRepository.delete(personnel);
+        return personnelMapper.toPersonnelResponse(personnel);
     }
 
     public Personnel getMyInfo() {
