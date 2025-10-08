@@ -12,6 +12,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -68,5 +69,13 @@ public class PersonnelController {
         return ApiResponse.<PersonnelResponse>builder()
                 .result(personnelService.uploadAvatar(file))
                 .build();
+    }
+
+    @DeleteMapping("/{code}")
+    public ResponseEntity<ApiResponse<PersonnelResponse>> deletePersonnel(@PathVariable String code) {
+        ApiResponse<PersonnelResponse> response = ApiResponse.<PersonnelResponse>builder()
+                .result(personnelService.deletePersonnel(code))
+                .build();
+        return ResponseEntity.ok().body(response);
     }
 }

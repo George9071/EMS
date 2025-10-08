@@ -1,5 +1,6 @@
 package com._6.ems.dto.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
@@ -20,10 +21,12 @@ public class BookingRequest {
     @Size(max = 1000)
     private String description;
 
+    @Schema(type = "string", example = "2025-10-05T09:30:00")
     @NotNull
     @Future
     private LocalDateTime startTime;
 
+    @Schema(type = "string", example = "2025-10-05T09:30:00")
     @NotNull
     private LocalDateTime endTime;
 
