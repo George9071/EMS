@@ -46,7 +46,7 @@ public class PersonnelService {
     NotificationRecipientRepository notificationRecipientRepository;
 
     @Transactional
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     public Personnel createPersonnel(PersonnelCreationRequest request) {
         Account account = accountService.createAccount(request.getAccountCreationRequest());
         Personnel personnel = personnelMapper.toPersonnel(request);
@@ -54,7 +54,7 @@ public class PersonnelService {
         personnel.setCode(generateCode(request.getFirstName(), request.getLastName(), request.getDob()));
         personnel.setAccount(account);
 
-        Privilege privilege = privilegeRepository.findById(String.valueOf(PrivilegeName.EMPLOYEE))
+        Privilege privilege = privilegeRepository.findByName(PrivilegeName.valueOf("EMPLOYEE"))
                 .orElseThrow(() -> new AppException(ErrorCode.PRIVILEGE_NOT_FOUND));
 
         personnel.setPrivileges(Set.of(privilege));

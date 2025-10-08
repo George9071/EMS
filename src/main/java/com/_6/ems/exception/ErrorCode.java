@@ -11,7 +11,7 @@ public enum ErrorCode {
     UNAUTHENTICATED(1007, "Unauthenticated", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1008, "You do not have permission", HttpStatus.FORBIDDEN),
 
-    INVALID_KEY(1001, "Uncategorized error", HttpStatus.BAD_REQUEST),
+    INVALID_KEY(1001, "Invalid key", HttpStatus.BAD_REQUEST),
     USER_EXISTED(1002, "User existed", HttpStatus.BAD_REQUEST),
     USERNAME_INVALID(1003, "Username must be at least {min} characters", HttpStatus.BAD_REQUEST),
     INVALID_PASSWORD(1004, "Password must be at least {min} characters", HttpStatus.BAD_REQUEST),
@@ -38,13 +38,20 @@ public enum ErrorCode {
     PROJECT_NOT_FOUND(5001, "Project not found", HttpStatus.NOT_FOUND),
     EXCEED_MAX_PARTICIPANTS(5002, "Project is full", HttpStatus.CONFLICT),
 
-    FILE_NOT_FOUND(6001, "File not found", HttpStatus.NOT_FOUND),
-    TASK_NOT_FOUND(7001, "Task not found", HttpStatus.NOT_FOUND),
+    FILE_NOT_FOUND(404, "File not found", HttpStatus.NOT_FOUND),
+    TASK_NOT_FOUND(404, "Task not found", HttpStatus.NOT_FOUND),
 
-    NOTIFICATION_NOT_FOUND(8001, "Notification not found", HttpStatus.NOT_FOUND),
+    NOTIFICATION_NOT_FOUND(404, "Notification not found", HttpStatus.NOT_FOUND),
     NOTIFICATION_ONLY_BE_SENT_BY_MANAGER(8001, "Only manager can send notification", HttpStatus.FORBIDDEN),
 
-    PRIVILEGE_NOT_FOUND(9001, "Privilege not found", HttpStatus.NOT_FOUND),
+    PRIVILEGE_NOT_FOUND(404, "Privilege not found", HttpStatus.NOT_FOUND),
+
+    MEETING_ROOM_NOT_FOUND(404, "Meeting room not found", HttpStatus.NOT_FOUND),
+    MEETING_ROOM_CONFLICT(405, "Room is already booked for this time period", HttpStatus.CONFLICT),
+
+    PERSONNEL_NOT_FOUND(404, "Personnel not found", HttpStatus.NOT_FOUND),
+    MEETING_BOOKING_NOT_FOUND(404, "Meeting booking not found", HttpStatus.NOT_FOUND),
+    EMAIL_EXCEPTION(500, "Email exception", HttpStatus.INTERNAL_SERVER_ERROR),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

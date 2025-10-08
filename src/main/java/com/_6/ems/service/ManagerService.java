@@ -2,7 +2,6 @@ package com._6.ems.service;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com._6.ems.dto.request.ManagerCreationRequest;
 import com._6.ems.entity.Account;
@@ -88,7 +87,7 @@ public class ManagerService {
     public List<ManagerResponse> getAllManagers() {
         return managerRepository.findAll().stream()
                 .map(managerMapper::toManagerResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 }
 

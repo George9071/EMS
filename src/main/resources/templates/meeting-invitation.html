@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông báo cuộc họp</title>
+    <style>
+        /* Reset styles for email compatibility */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, table, td, p, h1, h2, h3 {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif !important;
+        }
+
+        body {
+            width: 100% !important;
+            min-width: 100%;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            margin: 0;
+            padding: 20px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        table {
+            border-collapse: collapse;
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+
+        .email-container {
+            width: 100%;
+            max-width: 650px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .header-table {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 25px 25px 0 0;
+        }
+
+        .header-cell {
+            padding: 40px 30px;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .header-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-subtitle {
+            font-size: 18px;
+            color: #ffffff;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .content-table {
+            width: 100%;
+            padding: 0;
+            background-color: #ffffff;
+        }
+
+        .content-cell {
+            padding: 45px 35px;
+        }
+
+        .meeting-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            text-align: center;
+            margin-bottom: 25px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: #f5576c;
+        }
+
+        .description-table {
+            width: 100%;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f4ff 100%);
+            border-radius: 20px;
+            margin-bottom: 35px;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
+        }
+
+        .description-cell {
+            padding: 25px 30px;
+        }
+
+        .description-text {
+            color: #555;
+            font-size: 17px;
+            line-height: 1.7;
+            margin: 0;
+            text-align: center;
+            font-weight: 400;
+        }
+
+        /* Two-column layout using table */
+        .two-column-table {
+            width: 100%;
+            margin-bottom: 25px;
+        }
+
+        .column-cell {
+            width: 48%;
+            vertical-align: top;
+        }
+
+        .spacer-cell {
+            width: 4%;
+        }
+
+        /* Single column for full width */
+        .single-column-table {
+            width: 100%;
+            margin-bottom: 25px;
+        }
+
+        .detail-card {
+            width: 100%;
+            padding: 20px 25px 20px 20px;
+            border-radius: 20px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+            min-height: 120px;
+        }
+
+        .detail-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-time {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        .card-location {
+            background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);
+        }
+
+        .card-organizer {
+            background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+        }
+
+        .card-title {
+            color: #333;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 15px;
+            font-weight: 700;
+            opacity: 0.8;
+        }
+
+        .card-content {
+            color: #444;
+            font-size: 15px;
+            font-weight: 500;
+            margin: 6px 0;
+            line-height: 1.4;
+            max-width: calc(100% - 55px);
+            word-wrap: break-word;
+        }
+
+        .card-icon {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 20px;
+            opacity: 0.6;
+            background: rgba(255, 255, 255, 0.3);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .cta-table {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3);
+        }
+
+        .cta-cell {
+            padding: 35px 25px;
+            text-align: center;
+        }
+
+        .cta-title {
+            color: #ffffff;
+            font-size: 20px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .cta-button {
+            display: inline-block;
+            background-color: #ffffff;
+            color: #667eea;
+            padding: 15px 35px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+            box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(255, 255, 255, 0.4);
+        }
+
+        .note-table {
+            width: 100%;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-radius: 18px;
+            margin-top: 25px;
+            box-shadow: 0 8px 20px rgba(255, 234, 167, 0.3);
+        }
+
+        .note-cell {
+            padding: 20px 25px;
+        }
+
+        .note-text {
+            color: #856404;
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.6;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .footer-table {
+            width: 100%;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 0 0 25px 25px;
+        }
+
+        .footer-cell {
+            padding: 30px;
+            text-align: center;
+        }
+
+        .footer-text {
+            color: #6c757d;
+            font-size: 15px;
+            margin-bottom: 12px;
+            font-weight: 400;
+        }
+
+        .company-info {
+            color: #495057;
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 12px;
+        }
+
+        .copyright {
+            font-size: 13px;
+            color: #adb5bd;
+            font-weight: 300;
+        }
+
+        /* Decorative elements */
+        .decorative-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .circle-1 {
+            width: 80px;
+            height: 80px;
+            top: -20px;
+            right: -20px;
+        }
+
+        .circle-2 {
+            width: 60px;
+            height: 60px;
+            bottom: -15px;
+            left: -15px;
+        }
+
+        /* Mobile responsive */
+        @media only screen and (max-width: 600px) {
+            body {
+                padding: 10px 0;
+            }
+
+            .email-container {
+                width: 95% !important;
+                margin: 0 auto;
+            }
+
+            .header-cell,
+            .content-cell,
+            .footer-cell {
+                padding: 25px 20px !important;
+            }
+
+            .meeting-title {
+                font-size: 22px !important;
+            }
+
+            .column-cell {
+                display: block !important;
+                width: 100% !important;
+                padding: 8px 0 !important;
+            }
+
+            .spacer-cell {
+                display: none !important;
+            }
+
+            .detail-card {
+                padding: 20px !important;
+                margin-bottom: 15px;
+            }
+
+            .card-icon {
+                width: 40px !important;
+                height: 40px !important;
+                font-size: 20px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Main Container -->
+<table class="email-container" cellpadding="0" cellspacing="0" border="0">
+    <!-- Header -->
+    <tr>
+        <td>
+            <table class="header-table" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td class="header-cell" style="position: relative;">
+                        <div class="decorative-circle circle-1"></div>
+                        <div class="decorative-circle circle-2"></div>
+                        <h1 class="header-title">📅 Thông Báo Cuộc Họp</h1>
+                        <div class="header-subtitle">Bạn được mời tham gia cuộc họp quan trọng</div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <!-- Content -->
+    <tr>
+        <td>
+            <table class="content-table" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td class="content-cell">
+                        <!-- Meeting Title -->
+                        <h2 class="meeting-title" th:text="${meetingTitle}"></h2>
+
+                        <!-- Description -->
+                        <table class="description-table" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td class="description-cell">
+                                    <p class="description-text" th:text="${meetingDescription}"></p>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Two Column Layout: Time and Location -->
+                        <table class="two-column-table" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <!-- Time Column -->
+                                <td class="column-cell">
+                                    <table class="detail-card card-time" cellpadding="0" cellspacing="0" border="0">
+                                        <tr>
+                                            <td style="position: relative; padding: 20px;">
+                                                <div class="card-icon">⏰</div>
+                                                <div class="card-title">THỜI GIAN</div>
+                                                <div class="card-content"><strong>Bắt đầu:</strong> <span th:text="${startTime}"></span></div>
+                                                <div class="card-content"><strong>Kết thúc:</strong> <span th:text="${endTime}"></span></div>
+                                                <div class="card-content"><strong>Thời lượng:</strong> <span th:text="${duration}"></span></div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+
+                                <!-- Spacer -->
+                                <td class="spacer-cell"></td>
+
+                                <!-- Location Column -->
+                                <td class="column-cell">
+                                    <table class="detail-card card-location" cellpadding="0" cellspacing="0" border="0">
+                                        <tr>
+                                            <td style="position: relative; padding: 20px;">
+                                                <div class="card-icon">📍</div>
+                                                <div class="card-title">ĐỊA ĐIỂM</div>
+                                                <div class="card-content"><strong>Phòng:</strong> <span th:text="${roomName}"></span></div>
+                                                <div class="card-content"><strong>Vị trí:</strong> <span th:text="${roomLocation}"></span></div>
+                                                <div class="card-content"><strong>Sức chứa:</strong> <span th:text="${capacity}"></span> người</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Single Column: Organizer -->
+                        <table class="single-column-table" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td>
+                                    <table class="detail-card card-organizer" cellpadding="0" cellspacing="0" border="0">
+                                        <tr>
+                                            <td style="position: relative; padding: 20px;">
+                                                <div class="card-icon">👤</div>
+                                                <div class="card-title">NGƯỜI TỔ CHỨC</div>
+                                                <div class="card-content"><strong>Tên:</strong> <span th:text="${organizer}"></span></div>
+                                                <div class="card-content"><strong>Phòng ban:</strong> <span th:text="${organizerDepartment}"></span></div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Important Notes -->
+                        <table class="note-table" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td class="note-cell">
+                                    <p class="note-text">
+                                        <strong>🔔 Lưu ý:</strong> Vui lòng đến đúng giờ và mang theo tài liệu cần thiết. Nếu có vấn đề gì, hãy liên hệ trực tiếp với người tổ chức.
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+        <td>
+            <table class="footer-table" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td class="footer-cell">
+                        <p class="footer-text">Email này được gửi tự động từ hệ thống quản lý cuộc họp</p>
+                        <p class="company-info">Công ty TNHH ABC | Địa chỉ: 123 Đường XYZ, TP.HCM</p>
+                        <p class="copyright">© 2024 Company ABC. All rights reserved.</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>
