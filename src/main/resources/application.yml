@@ -1,0 +1,60 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /ems
+
+spring:
+  datasource:
+    url: ${DB_URL}
+    driverClassName: "com.mysql.cj.jdbc.Driver"
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: bk.manarate@gmail.com
+    password: ${MAIL_PASS}
+    properties:
+      mail:
+        debug: true
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+jwt:
+  signerKey: "1TjXchw5FloESb63Kc+DFhTARvpWL4jUGCwfGWxuG5SIf/1y/LgJxHnMqaF6A/ij"
+  valid-duration: 900           #seconds -> 15 minutes
+  refreshable-duration: 86400   #seconds -> 1 days
+
+thymeleaf:
+  mode: HTML
+  encoding: UTF-8
+  cache: false  # Tắt cache trong development
+  prefix: classpath:/templates/
+  suffix: .html
+
+cloudinary:
+  cloud-name: ${CLOUDINARY_NAME}
+  api-key: ${CLOUDINARY_KEY}
+  api-secret: ${CLOUDINARY_SECRET}
+
+swagger:
+  host-url: http://localhost:8080/ems
+
+salary:
+  full:
+    employee: 100
+    manager: 175
+  half:
+    employee: 70
+    manager: 120
+  absence: 30
