@@ -38,6 +38,7 @@ public class PersonnelCreationRequest {
     String street;
     String description;
     String skills;
+    String position;
 
     @Valid
     AccountCreationRequest accountCreationRequest;

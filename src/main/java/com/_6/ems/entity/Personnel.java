@@ -50,6 +50,9 @@ public class Personnel {
     @Column(name = "skills")
     String skills;
 
+    @Column(name = "position")
+    String position;
+
     @Column(name = "profile_image")
     @Builder.Default
     String avatar = null;
