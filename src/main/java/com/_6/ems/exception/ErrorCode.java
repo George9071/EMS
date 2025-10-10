@@ -10,6 +10,7 @@ public enum ErrorCode {
 
     UNAUTHENTICATED(1007, "Unauthenticated", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1008, "You do not have permission", HttpStatus.FORBIDDEN),
+    ACCESS_DENIED(1009, "You do not have permission", HttpStatus.FORBIDDEN),
 
     INVALID_KEY(1001, "Invalid key", HttpStatus.BAD_REQUEST),
     USER_EXISTED(1002, "User existed", HttpStatus.BAD_REQUEST),
@@ -30,6 +31,7 @@ public enum ErrorCode {
     ATTENDANCE_ALREADY_CHECKIN(3002, "Already check-in", HttpStatus.CONFLICT),
     ATTENDANCE_ALREADY_CHECKOUT(3003, "Already check-out", HttpStatus.CONFLICT),
     ATTENDANCE_NOT_CHECKIN(3004, "Must check-in before check-out", HttpStatus.CONFLICT),
+    ATTENDANCE_INVALID_TIME(3005, "Invalid time", HttpStatus.CONFLICT),
 
     DEPARTMENT_NOT_FOUND(4001, "Department not found", HttpStatus.NOT_FOUND),
     DEPARTMENT_ALREADY_ASSIGNED(4002, "Department already has a manager assigned", HttpStatus.CONFLICT),

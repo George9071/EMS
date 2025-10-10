@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com._6.ems.dto.response.DepartmentResponse;
@@ -39,6 +40,7 @@ public class DepartmentService {
     PersonnelRepository personnelRepository;
 
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public DepartmentResponse createDepartment(DepartmentCreationRequest request) {
         Department dept = departmentMapper.toDepartment(request);
         Department savedDept = departmentRepository.save(dept); // must exist if Manager holds FK
@@ -53,7 +55,7 @@ public class DepartmentService {
                 manager.setDepartment(null);
             }
 
-            // set new link (owning side = Manager)
+            // set new link (owning side is manager)
             manager.setDepartment(savedDept);
             savedDept.setManager(manager);
             managerRepository.save(manager);
@@ -62,18 +64,22 @@ public class DepartmentService {
         return departmentMapper.toDepartmentResponse(savedDept);
     }
 
+    @Transactional(readOnly = true)
     public DepartmentResponse getDepartmentById(int id) {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
         return departmentMapper.toDepartmentResponse(department);
     }
 
+    @Transactional(readOnly = true)
     public List<DepartmentResponse> getAllDepartments() {
-        return departmentRepository.findAll().stream()
+        return departmentRepository.findAll()
+                .stream()
                 .map(departmentMapper::toDepartmentResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public EmployeeInDepartmentResponse getAllEmployeesInDepartment(int departmentId) {
         Department department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
@@ -82,6 +88,7 @@ public class DepartmentService {
     }
 
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public DepartmentResponse assignManagerToDepartment(int departmentId, String managerId) {
         Department department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
@@ -116,6 +123,7 @@ public class DepartmentService {
     }
 
     @Transactional
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     public EmployeeInDepartmentResponse assignEmployeeToDepartment(int departmentId, String code) {
         Department target = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
@@ -142,6 +150,7 @@ public class DepartmentService {
     }
 
     @Transactional
+    @PreAuthorize("hasRole('MANAGER') or hasRole('ADMIN')")
     public void removeEmployeeFromDepartment(int departmentId, String code) {
         Department dept = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));

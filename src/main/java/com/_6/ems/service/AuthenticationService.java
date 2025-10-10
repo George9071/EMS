@@ -154,7 +154,7 @@ public class AuthenticationService {
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", account.getRole().name())
                 .claim("privilege", buildPrivilege(account))
-                .claim("code", personnel != null ? personnel.getCode() : 0)
+                .claim("code", personnel != null ? personnel.getCode() : "0")
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
