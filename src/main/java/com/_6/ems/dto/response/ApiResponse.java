@@ -24,7 +24,7 @@ public class ApiResponse<T> {
                 .build();
     }
 
-    public static <T> ApiResponse<T> badRequest(String message) {
+    public static <T> ApiResponse<T> error(String message) {
         return ApiResponse.<T>builder()
                 .code(400)
                 .message(message != null ? message : "Bad Request")

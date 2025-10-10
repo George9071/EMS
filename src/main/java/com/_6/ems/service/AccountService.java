@@ -33,7 +33,7 @@ public class AccountService {
             throw new AppException(ErrorCode.USER_EXISTED);
 
         Account account = accountMapper.toAccount(request);
-        account.setRole(Role.EMPLOYEE);
+        account.setRole(request.getRole());
         account.setPassword(passwordEncoder.encode(request.getPassword()));
 
         return accountRepository.save(account);

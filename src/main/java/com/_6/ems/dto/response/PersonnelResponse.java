@@ -26,6 +26,8 @@ public class PersonnelResponse {
     String street;
     String description;
     String skills;
+    String position;
     String accountId;
+    String role;
     Set<PrivilegeResponse> privileges;
 }

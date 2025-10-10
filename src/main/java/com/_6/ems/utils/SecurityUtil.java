@@ -27,4 +27,20 @@ public class SecurityUtil {
 
         throw new AppException(ErrorCode.UNAUTHORIZED);
     }
+
+    public static boolean isCurrentUserAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof Jwt jwt) {
+            String scope = jwt.getClaimAsString("scope");
+            return "ADMIN".equalsIgnoreCase(scope);
+        }
+
+        throw new AppException(ErrorCode.UNAUTHORIZED);
+    }
 }

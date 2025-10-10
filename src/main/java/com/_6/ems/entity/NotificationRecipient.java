@@ -30,4 +30,14 @@ public class NotificationRecipient {
         this.notification = notification;
         this.id = new NotificationRecipientId(notification.getId(), email);
     }
+
+    @PrePersist
+    public void prePersist() {
+        if (this.id == null) {
+            this.id = new NotificationRecipientId();
+        }
+        if (this.notification != null && this.id.getNotificationId() == null) {
+            this.id.setNotificationId(this.notification.getId());
+        }
+    }
 }

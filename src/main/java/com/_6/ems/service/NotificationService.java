@@ -1,14 +1,14 @@
 package com._6.ems.service;
 
+import com._6.ems.dto.request.AdminNotificationRequest;
 import com._6.ems.dto.request.NotificationRequest;
 import com._6.ems.dto.response.NotificationResponse;
 import com._6.ems.entity.*;
+import com._6.ems.enums.Role;
 import com._6.ems.exception.AppException;
 import com._6.ems.exception.ErrorCode;
 import com._6.ems.mapper.NotificationMapper;
-import com._6.ems.repository.EmployeeRepository;
-import com._6.ems.repository.ManagerRepository;
-import com._6.ems.repository.NotificationRepository;
+import com._6.ems.repository.*;
 import com._6.ems.utils.SecurityUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AccessLevel;
@@ -17,6 +17,8 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,8 +37,10 @@ public class NotificationService {
     ManagerRepository managerRepository;
     EmployeeRepository employeeRepository;
     NotificationRepository notificationRepository;
-    JavaMailSender mailSender;
+    EmailService emailService;
     NotificationMapper notificationMapper;
+    PersonnelRepository personnelRepository;
+    NotificationRecipientRepository notificationRecipientRepository;
 
     @Transactional
     public NotificationResponse sendNotification(NotificationRequest request) {
@@ -75,17 +79,58 @@ public class NotificationService {
         notificationRepository.save(notification);
 
         for (String email : emails) {
-            sendEmail(email, request.getSubject(), request.getMessage());
+            emailService.sendEmail(email, request.getSubject(), request.getMessage());
         }
 
         return notificationMapper.toResponse(notification);
     }
 
-    private void sendEmail(String to, String subject, String content) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(content);
-        mailSender.send(message);
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
+    public NotificationResponse sendNotificationToAllExceptAdmin(AdminNotificationRequest request) {
+
+        if (!SecurityUtil.isCurrentUserAdmin()) {
+            throw new AppException(ErrorCode.ONLY_ADMIN_CAN_SEND_GLOBAL_NOTIFICATION);
+        }
+
+        List<Personnel> allPersonnels = personnelRepository.findAll()
+                .stream()
+                .filter(emp -> emp.getAccount() != null && emp.getAccount().getRole() != Role.ADMIN)
+                .toList();
+
+        if (allPersonnels.isEmpty()) {
+            throw new AppException(ErrorCode.NO_RECIPIENT_FOUND);
+        }
+
+        List<String> emails = allPersonnels.stream()
+                .map(Personnel::getEmail)
+                .filter(Objects::nonNull)
+                .toList();
+
+        // 👉 Lưu Notification 1 lần
+        Notification notification = Notification.builder()
+                .sender(null)
+                .subject(request.getSubject())
+                .content(request.getMessage())
+                .sendAt(LocalDateTime.now())
+                .build();
+
+        notification = notificationRepository.save(notification);
+
+        Notification finalNotification = notification;
+
+        List<NotificationRecipient> recipientEntities = emails.stream()
+                .map(email -> new NotificationRecipient(finalNotification, email))
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        notification.setRecipients(recipientEntities);
+
+        notificationRepository.save(notification);
+
+        for (String email : emails) {
+            emailService.sendEmail(email, request.getSubject(), request.getMessage());
+        }
+
+        return notificationMapper.toResponse(notification);
     }
 }

@@ -57,7 +57,7 @@ public class PersonnelService {
 
         Privilege privilege = privilegeRepository.findByName(PrivilegeName.valueOf("EMPLOYEE"))
                 .orElseThrow(() -> new AppException(ErrorCode.PRIVILEGE_NOT_FOUND));
-
+        personnel.setPosition(request.getPosition());
         personnel.setPrivileges(Set.of(privilege));
 
         return personnelRepository.save(personnel);
@@ -182,7 +182,7 @@ public class PersonnelService {
         return personnelRepository.findAll()
                 .stream()
                 .map(personnelMapper::toPersonnelResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public PersonnelResponse getPersonnelByCode(String code) {
