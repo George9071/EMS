@@ -1,8 +1,11 @@
 package com._6.ems.controller;
+import com._6.ems.mapper.SalaryMapper;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
+import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
 
 import com._6.ems.dto.response.ApiResponse;
@@ -11,9 +14,11 @@ import com._6.ems.service.SalaryService;
 
 @RestController
 @RequestMapping("/salary")
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @RequiredArgsConstructor
 public class SalaryController {
-    private final SalaryService salaryService;
+    SalaryService salaryService;
+    SalaryMapper salaryMapper;
 
     @PostMapping()
     public ApiResponse<SalaryResponse> createRecord(
@@ -22,7 +27,7 @@ public class SalaryController {
             @RequestParam(required = false) Integer year) {
 
         return ApiResponse.<SalaryResponse>builder()
-                .result(salaryService.createSalary(code, month, year))
+                .result(salaryMapper.toSalaryResponse(salaryService.createSalary(code, month, year)))
                 .build();
     }
 

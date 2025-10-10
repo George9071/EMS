@@ -6,6 +6,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -31,11 +32,39 @@ public class Department {
     LocalDate establishmentDate;
 
     @OneToMany(mappedBy = "department", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    List<Employee> employees;
+    Set<Employee> employees;
 
     @OneToOne(mappedBy = "department", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     Manager manager;
 
     @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<Project> projects;
+    Set<Project> projects;
+
+    public void addEmployee(Employee e) {
+        employees.add(e);
+        e.setDepartment(this);
+        this.employeeNumber = employees.size();
+    }
+
+    public void removeEmployee(Employee e) {
+        if (employees.remove(e)) {
+            e.setDepartment(null);
+            this.employeeNumber = employees.size();
+        }
+    }
+
+    public void assignManager(Manager m) {
+        if (this.manager == m) return;
+        if (this.manager != null) this.manager.setDepartment(null);
+        this.manager = m;
+        if (m != null && m.getDepartment() != this) m.setDepartment(this);
+    }
+
+    public void unassignManager() {
+        if (this.manager != null) {
+            Manager old = this.manager;
+            this.manager = null;
+            if (old.getDepartment() == this) old.setDepartment(null);
+        }
+    }
 }

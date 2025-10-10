@@ -15,7 +15,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "attendance_record")
+@Table(
+    name = "attendance_record",
+    uniqueConstraints = @UniqueConstraint(
+        name = "attendance_date_personnel_persistent",
+        columnNames = {"personnel_code", "work_date"}
+    ))
 public class AttendanceRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
