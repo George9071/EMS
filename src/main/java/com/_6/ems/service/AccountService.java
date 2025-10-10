@@ -54,7 +54,7 @@ public class AccountService {
         return accountRepository.findAll();
     }
 
-    @PostAuthorize("returnObject.username == authentication.name")
+    @PostAuthorize("returnObject.username == authentication.name or hasRole('ADMIN')")
     public Account getAccount(String accountId) {
         return accountRepository.findById(accountId)
             .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_EXISTED));
