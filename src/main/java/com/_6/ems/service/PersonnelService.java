@@ -10,10 +10,7 @@ import com._6.ems.enums.PrivilegeName;
 import com._6.ems.exception.AppException;
 import com._6.ems.exception.ErrorCode;
 import com._6.ems.mapper.PersonnelMapper;
-import com._6.ems.repository.AccountRepository;
-import com._6.ems.repository.NotificationRecipientRepository;
-import com._6.ems.repository.PersonnelRepository;
-import com._6.ems.repository.PrivilegeRepository;
+import com._6.ems.repository.*;
 import com._6.ems.utils.CloudinaryUtil;
 import com._6.ems.utils.SecurityUtil;
 import lombok.AccessLevel;
@@ -45,6 +42,8 @@ public class PersonnelService {
     AccountService accountService;
     CloudinaryUtil cloudinaryUtil;
     NotificationRecipientRepository notificationRecipientRepository;
+    EmployeeRepository employeeRepository;
+    private final DepartmentRepository departmentRepository;
 
     @Transactional
 //    @PreAuthorize("hasRole('ADMIN')")
@@ -64,13 +63,24 @@ public class PersonnelService {
     }
 
     @Transactional
-    public PersonnelResponse deletePersonnel(String code) {
+    public void deletePersonnel(String code) {
         Personnel personnel = personnelRepository.findById(code)
                 .orElseThrow(() -> new AppException(ErrorCode.PERSONNEL_NOT_FOUND));
+
+        employeeRepository.findByCode(code).ifPresent(employee -> {
+            Department department  = employee.getDepartment();
+            if (department != null) {
+                if (department.getEmployees() != null) department.removeEmployee(employee);
+                employee.setDepartment(null);
+                departmentRepository.save(department);
+            }
+
+            employeeRepository.delete(employee);
+        });
+
         Account account = personnel.getAccount();
-        accountRepository.delete(account);
+        if (account != null) accountRepository.delete(account);
         personnelRepository.delete(personnel);
-        return personnelMapper.toPersonnelResponse(personnel);
     }
 
     public Personnel getMyInfo() {

@@ -38,6 +38,7 @@ public class AttendanceService {
     PersonnelRepository personnelRepository;
     AttendanceMapper attendanceMapper;
     SalaryRepository salaryRepository;
+    SalaryService salaryService;
 
     @Transactional
     public AttendanceRecordResponse checkIn() {
@@ -82,7 +83,7 @@ public class AttendanceService {
         int year = today.getYear();
 
         Salary salary = salaryRepository.findByOwner_CodeAndMonthAndYear(code, month, year)
-                .orElseThrow(() -> new AppException(ErrorCode.ATTENDANCE_RECORD_NOT_FOUND));
+                .orElse(salaryService.createSalary(code, month, year));
 
         if (worked >= 3) {
             record.setType(AttendanceType.FULL_DAY);

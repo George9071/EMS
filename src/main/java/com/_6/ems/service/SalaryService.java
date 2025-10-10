@@ -51,7 +51,7 @@ public class SalaryService {
     ManagerRepository managerRepository;
 
     @Transactional
-    public SalaryResponse createSalary(String code, Integer month, Integer year) {
+    public Salary createSalary(String code, Integer month, Integer year) {
         Personnel personnel = personnelRepository.findById(code)
                 .orElseThrow(() -> new EntityNotFoundException("Personnel with code: " + code + " not found!"));
 
@@ -71,7 +71,7 @@ public class SalaryService {
         newRecord.setYear(finalYear);
 
         calculate(newRecord);
-        return mapToResponse(salaryRepository.save(newRecord));
+        return salaryRepository.save(newRecord);
     }
 
     @Transactional

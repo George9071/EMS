@@ -40,23 +40,26 @@ public class DepartmentService {
 
     @Transactional
     public DepartmentResponse createDepartment(DepartmentCreationRequest request) {
-        Department department = departmentMapper.toDepartment(request);
+        Department dept = departmentMapper.toDepartment(request);
+        Department savedDept = departmentRepository.save(dept); // must exist if Manager holds FK
 
         if (request.getManager_id() != null) {
             Manager manager = managerRepository.findById(request.getManager_id())
                     .orElseThrow(() -> new AppException(ErrorCode.MANAGER_NOT_FOUND));
 
-            Department previousDept = manager.getDepartment();
-            if (previousDept != null) {
-                previousDept.setManager(null);
-                departmentRepository.save(previousDept);
+            Department prev = manager.getDepartment();
+            if (prev != null && prev.getId() != savedDept.getId()) {
+                prev.setManager(null);
+                manager.setDepartment(null);
             }
-            department.setManager(manager);
-            manager.setDepartment(department);
+
+            // set new link (owning side = Manager)
+            manager.setDepartment(savedDept);
+            savedDept.setManager(manager);
             managerRepository.save(manager);
         }
 
-        return departmentMapper.toDepartmentResponse(departmentRepository.save(department));
+        return departmentMapper.toDepartmentResponse(savedDept);
     }
 
     public DepartmentResponse getDepartmentById(int id) {
@@ -86,26 +89,20 @@ public class DepartmentService {
         Manager manager = managerRepository.findById(managerId)
                 .orElseThrow(() -> new AppException(ErrorCode.MANAGER_NOT_FOUND));
 
-        Manager currentManager = department.getManager();
-        if (currentManager != null && !currentManager.getCode().equals(managerId)) {
-            currentManager.setDepartment(null);
-            managerRepository.save(currentManager);
+        if (department.getManager() != null && department.getManager().getCode().equals(managerId)) {
+            return departmentMapper.toDepartmentResponse(department);
         }
 
-        // Unassign the manager from their previous department, if needed
-        Department previousDept = manager.getDepartment();
-        if (previousDept != null && previousDept.getId() != departmentId) {
-            previousDept.setManager(null);
-            departmentRepository.save(previousDept);
+        // If manager currently manages a different department, break that link.
+        Department prev = manager.getDepartment();
+        if (prev != null && prev.getId() != departmentId) {
+            prev.unassignManager(); // updates both sides
         }
 
-        // Set the new assignment
-        department.setManager(manager);
-        manager.setDepartment(department);
+        // Assign new link (updates both sides)
+        department.assignManager(manager);
 
-        // Save both sides of the relationship
-        managerRepository.save(manager);
-        return departmentMapper.toDepartmentResponse(departmentRepository.save(department));
+        return departmentMapper.toDepartmentResponse(department);
     }
 
     @Transactional
@@ -113,85 +110,49 @@ public class DepartmentService {
         Department department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
-        Manager manager = department.getManager();
-        if (manager != null) {
-            manager.setDepartment(null);
-            managerRepository.save(manager);
-        }
-
-        department.setManager(null);
-        return departmentMapper.toDepartmentResponse(departmentRepository.save(department));
+        if (department.getManager() == null) return departmentMapper.toDepartmentResponse(department);
+        department.unassignManager();
+        return departmentMapper.toDepartmentResponse(department);
     }
 
     @Transactional
     public EmployeeInDepartmentResponse assignEmployeeToDepartment(int departmentId, String code) {
-        Department department = departmentRepository.findById(departmentId)
+        Department target = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
         Personnel record = personnelRepository.findById(code)
                 .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
 
-        Employee employee = employeeRepository.findById(code).orElse(null);
-
-        if (employee == null) {
-            employee = Employee.builder()
+        Employee employee = employeeRepository.findById(code).orElseGet(() -> {
+            Employee e = Employee.builder()
                     .informationRecord(record)
-                    .department(department)
                     .build();
+            return employeeRepository.save(e);
+        });
 
-            employee = employeeRepository.save(employee);
-
-            department.getEmployees().add(employee);
-            department.setEmployeeNumber(department.getEmployees().size());
-        } else {
-            Department currentDept = employee.getDepartment();
-
-            if (currentDept != null && currentDept.getId() != departmentId) {
-                currentDept.getEmployees().remove(employee);
-                currentDept.setEmployeeNumber(currentDept.getEmployees().size());
-            }
-
-            employee.setDepartment(department);
-            department.setEmployeeNumber(department.getEmployeeNumber() + 1);
-
-            if (currentDept == null || currentDept.getId() != departmentId) {
-                employee.setDepartment(department);
-                employeeRepository.save(employee);
-
-                department.getEmployees().add(employee);
-                department.setEmployeeNumber(department.getEmployees().size());
-            }
+        Department current = employee.getDepartment();
+        if (current != null && current.getId() == target.getId()) {
+            return departmentMapper.toEmployeeInDepartment(target);
         }
 
-        return departmentMapper.toEmployeeInDepartment(departmentRepository.save(department));
+        if (current != null) current.removeEmployee(employee);
+        target.addEmployee(employee);
+
+        return departmentMapper.toEmployeeInDepartment(target);
     }
 
     @Transactional
     public void removeEmployeeFromDepartment(int departmentId, String code) {
-        Department department = departmentRepository.findById(departmentId)
+        Department dept = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
         Employee employee = employeeRepository.findById(code)
                 .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
-        Department currentDept = employee.getDepartment();
+        Department current = employee.getDepartment();
+        if (current == null || current.getId() != departmentId) throw new AppException(ErrorCode.EMPLOYEE_NOT_BELONG);
 
-        if (currentDept == null || currentDept.getId() != departmentId) {
-            throw new AppException(ErrorCode.EMPLOYEE_NOT_BELONG);
-        }
-
-        employee.setDepartment(null);
-        employeeRepository.save(employee);
-
-        List<Employee> employeeList = department.getEmployees();
-        if (employeeList != null) {
-            employeeList.removeIf(e -> e.getCode().equals(code));
-            department.setEmployeeNumber(employeeList.size());
-        } else {
-            department.setEmployeeNumber(0);
-        }
-
-        departmentRepository.save(department);
+        current.removeEmployee(employee);
     }
 
 }
