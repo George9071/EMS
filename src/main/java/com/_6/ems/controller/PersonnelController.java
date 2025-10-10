@@ -2,9 +2,7 @@ package com._6.ems.controller;
 
 import com._6.ems.dto.request.PersonnelCreationRequest;
 import com._6.ems.dto.request.PersonnelUpdateRequest;
-import com._6.ems.dto.response.ApiResponse;
-import com._6.ems.dto.response.NotiResponse;
-import com._6.ems.dto.response.PersonnelResponse;
+import com._6.ems.dto.response.*;
 import com._6.ems.mapper.PersonnelMapper;
 import com._6.ems.service.PersonnelService;
 import jakarta.validation.Valid;
@@ -13,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,6 +37,22 @@ public class PersonnelController {
     ApiResponse<List<NotiResponse>> getMyNotification(){
         return ApiResponse.<List<NotiResponse>>builder()
                 .result(personnelService.getMyNoti())
+                .build();
+    }
+
+    @GetMapping("/all")
+    public ApiResponse<List<PersonnelResponse>> getAllPersonnel() {
+        List<PersonnelResponse> personnel = personnelService.getAllPersonnel();
+        return ApiResponse.<List<PersonnelResponse>>builder()
+                .result(personnel)
+                .build();
+    }
+
+    @GetMapping("/{code}")
+    public ApiResponse<PersonnelResponse> getPersonnelByCode(@PathVariable String code) {
+        PersonnelResponse personnel = personnelService.getPersonnelByCode(code);
+        return ApiResponse.<PersonnelResponse>builder()
+                .result(personnel)
                 .build();
     }
 

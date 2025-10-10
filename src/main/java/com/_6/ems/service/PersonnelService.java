@@ -19,6 +19,7 @@ import com._6.ems.utils.SecurityUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -173,6 +175,20 @@ public class PersonnelService {
                 .sender(notification.getSender().getCode())
                 .isRead(recipient.isRead())
                 .build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('AUTHORIZE_ADMIN')")
+    public List<PersonnelResponse> getAllPersonnel() {
+        return personnelRepository.findAll()
+                .stream()
+                .map(personnelMapper::toPersonnelResponse)
+                .collect(Collectors.toList());
+    }
+
+    public PersonnelResponse getPersonnelByCode(String code) {
+        Personnel personnel = personnelRepository.findById(code)
+                .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
+        return personnelMapper.toPersonnelResponse(personnel);
     }
 
     /* Helper method */
