@@ -6,6 +6,7 @@ import com._6.ems.exception.ErrorCode;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -51,6 +52,19 @@ public class EmailService {
 
         mailSender.send(message);
         } catch (MessagingException e) {
+            throw new AppException(ErrorCode.EMAIL_EXCEPTION);
+        }
+    }
+
+    @Async
+    public void sendEmail(String to, String subject, String content) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(content);
+            mailSender.send(message);
+        } catch (Exception e) {
             throw new AppException(ErrorCode.EMAIL_EXCEPTION);
         }
     }

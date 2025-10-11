@@ -32,7 +32,7 @@ public class Personnel {
     @Column(name = "birthday")
     LocalDate dob;
 
-    @Column(name = "email")
+    @Column(name = "email", unique = true)
     String email;
 
     @Column(name = "phone")

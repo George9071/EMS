@@ -11,7 +11,11 @@ public interface PersonnelMapper {
     Personnel toPersonnel(PersonnelCreationRequest request);
 
     @Mapping(source = "account.id", target = "accountId")
+    @Mapping(source = "account.role", target = "role")
     @Mapping(source = "avatar", target = "avatarUrl")
+    @Mapping(source = "gender", target = "gender")
+    @Mapping(source = "position", target = "position")
+    @Mapping(source = "privileges", target = "privileges")
     PersonnelResponse toPersonnelResponse(Personnel personnel);
 
     @Mapping(target = "privileges", ignore = true)

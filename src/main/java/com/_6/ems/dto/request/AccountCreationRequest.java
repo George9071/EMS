@@ -1,5 +1,7 @@
 package com._6.ems.dto.request;
 
+import com._6.ems.enums.Role;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -14,4 +16,8 @@ public class AccountCreationRequest {
     String username;
     @Size(min = 8, message = "INVALID_PASSWORD")
     String password;
+
+    @Schema(description = "Vai trò của tài khoản", example = "EMPLOYEE",
+            allowableValues = {"ADMIN", "EMPLOYEE", "MANAGER"})
+    Role role;
 }
