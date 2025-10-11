@@ -66,7 +66,7 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public DepartmentResponse getDepartmentById(int id) {
-        Department department = departmentRepository.findById(id)
+        Department department = departmentRepository.findByIdWithManagerDetails(id)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
         return departmentMapper.toDepartmentResponse(department);
     }
@@ -81,7 +81,7 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public EmployeeInDepartmentResponse getAllEmployeesInDepartment(int departmentId) {
-        Department department = departmentRepository.findById(departmentId)
+        Department department = departmentRepository.findByIdWithDetails(departmentId)
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
 
         return departmentMapper.toEmployeeInDepartment(department);

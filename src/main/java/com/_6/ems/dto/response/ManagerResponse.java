@@ -1,5 +1,6 @@
 package com._6.ems.dto.response;
 
+import com._6.ems.enums.Gender;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +13,10 @@ import java.time.LocalDate;
 @Builder
 public class ManagerResponse {
     String code;
-    String department_id;
-    LocalDate manageDate;;
+    String name;
+    Gender gender;
+    String email;
+    String phone;
+    String avatar;
+    LocalDate manageDate;
 }

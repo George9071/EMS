@@ -25,10 +25,12 @@ public interface EmployeeMapper {
     @Mapping(source = "taskCompleted", target = "task_completed")
     EmployeeResponse toEmployeeResponse(Employee employee);
 
-    @Mapping(
-            target = "fullName",
-            expression = "java(employee.getInformationRecord().getFirstName() + \" \" + employee.getInformationRecord().getLastName())"
-    )
+    @Mapping(source = "code", target = "code")
+    @Mapping(target = "name", expression = "java(employee.getInformationRecord().getFirstName() + \" \" + employee.getInformationRecord().getLastName())")
+    @Mapping(source = "informationRecord.gender", target = "gender")
+    @Mapping(source = "informationRecord.email", target = "email")
+    @Mapping(source = "informationRecord.phoneNumber", target = "phone")
+    @Mapping(source = "informationRecord.avatar", target = "avatar")
     EmployeeSimpleResponse toSimpleResponse(Employee employee);
 
     List<EmployeeSimpleResponse> toSimpleResponseList(List<Employee> employees);

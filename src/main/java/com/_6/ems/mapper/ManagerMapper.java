@@ -8,6 +8,12 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface ManagerMapper {
-    @Mapping(source = "department.id", target = "department_id")
+    @Mapping(source = "code", target = "code")
+    @Mapping(source = "manageDate", target = "manageDate")
+    @Mapping(target = "name", expression = "java(manager.getInformationRecord().getFirstName() + \" \" + manager.getInformationRecord().getLastName())")
+    @Mapping(source = "informationRecord.gender", target = "gender")
+    @Mapping(source = "informationRecord.email", target = "email")
+    @Mapping(source = "informationRecord.phoneNumber", target = "phone")
+    @Mapping(source = "informationRecord.avatar", target = "avatar")
     ManagerResponse toManagerResponse(Manager manager);
 }
