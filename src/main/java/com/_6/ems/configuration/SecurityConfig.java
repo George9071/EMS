@@ -73,7 +73,7 @@ public class SecurityConfig {
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(new CustomJwtGrantedAuthoritiesConverter());
-        converter.setPrincipalClaimName("code");
+        // converter.setPrincipalClaimName("code");
         return converter;
     }
 
