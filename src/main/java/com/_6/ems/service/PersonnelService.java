@@ -86,8 +86,6 @@ public class PersonnelService {
         Account account = personnel.getAccount();
         if (account != null) accountRepository.delete(account);
         personnelRepository.delete(personnel);
-
-        return toPersonnelResponse(personnel);
     }
 
     public PersonnelResponse getMyInfo() {
