@@ -4,12 +4,16 @@ import com._6.ems.dto.request.PersonnelCreationRequest;
 import com._6.ems.dto.request.PersonnelUpdateRequest;
 import com._6.ems.dto.response.NotiResponse;
 import com._6.ems.dto.response.PersonnelResponse;
+import com._6.ems.dto.response.PrivilegeResponse;
 import com._6.ems.entity.*;
 import com._6.ems.entity.compositeKey.NotificationRecipientId;
 import com._6.ems.enums.PrivilegeName;
+import com._6.ems.enums.Role;
 import com._6.ems.exception.AppException;
 import com._6.ems.exception.ErrorCode;
 import com._6.ems.mapper.PersonnelMapper;
+import com._6.ems.mapper.PrivilegeMapper;
+import com._6.ems.mapper.TaskMapper;
 import com._6.ems.repository.*;
 import com._6.ems.utils.CloudinaryUtil;
 import com._6.ems.utils.SecurityUtil;
@@ -24,10 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,11 +44,13 @@ public class PersonnelService {
     CloudinaryUtil cloudinaryUtil;
     NotificationRecipientRepository notificationRecipientRepository;
     EmployeeRepository employeeRepository;
+    PrivilegeMapper privilegeMapper;
+    ManagerRepository managerRepository;
+    private final TaskMapper taskMapper;
     private final DepartmentRepository departmentRepository;
 
     @Transactional
-//    @PreAuthorize("hasRole('ADMIN')")
-    public Personnel createPersonnel(PersonnelCreationRequest request) {
+    public PersonnelResponse createPersonnel(PersonnelCreationRequest request) {
         Account account = accountService.createAccount(request.getAccountCreationRequest());
         Personnel personnel = personnelMapper.toPersonnel(request);
 
@@ -59,7 +62,9 @@ public class PersonnelService {
         personnel.setPosition(request.getPosition());
         personnel.setPrivileges(Set.of(privilege));
 
-        return personnelRepository.save(personnel);
+        personnel = personnelRepository.save(personnel);
+
+        return toPersonnelResponse(personnel);
     }
 
     @Transactional
@@ -81,21 +86,25 @@ public class PersonnelService {
         Account account = personnel.getAccount();
         if (account != null) accountRepository.delete(account);
         personnelRepository.delete(personnel);
+
+        return toPersonnelResponse(personnel);
     }
 
-    public Personnel getMyInfo() {
+    public PersonnelResponse getMyInfo() {
         var context = SecurityContextHolder.getContext();
         String name = context.getAuthentication().getName();
 
         Account account = accountRepository.findByUsername(name).orElseThrow(
                 () -> new AppException(ErrorCode.ACCOUNT_NOT_EXISTED));
 
-        return personnelRepository.findByAccount_Id(account.getId()).orElseThrow(
+        Personnel personnel = personnelRepository.findByAccount_Id(account.getId()).orElseThrow(
                 () -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
+
+        return toPersonnelResponse(personnel);
     }
 
     @Transactional
-    public Personnel updatePersonnel(String code, PersonnelUpdateRequest request){
+    public PersonnelResponse updatePersonnel(String code, PersonnelUpdateRequest request){
         Personnel personnel = personnelRepository.findById(code)
                 .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
 
@@ -106,7 +115,7 @@ public class PersonnelService {
             personnel.setPrivileges(new HashSet<>(privileges));
         }
 
-        return personnelRepository.save(personnel);
+        return toPersonnelResponse(personnel);
     }
 
     @Transactional
@@ -126,7 +135,7 @@ public class PersonnelService {
             personnel.setAvatar(imageUrl);
             personnelRepository.save(personnel);
 
-            return personnelMapper.toPersonnelResponse(personnel);
+            return toPersonnelResponse(personnel);
         } catch (IOException e) {
             throw new RuntimeException("Cloudinary upload failed", e);
         }
@@ -191,14 +200,15 @@ public class PersonnelService {
     public List<PersonnelResponse> getAllPersonnel() {
         return personnelRepository.findAll()
                 .stream()
-                .map(personnelMapper::toPersonnelResponse)
+                .map(this::toPersonnelResponse)
                 .toList();
     }
 
     public PersonnelResponse getPersonnelByCode(String code) {
         Personnel personnel = personnelRepository.findById(code)
                 .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
-        return personnelMapper.toPersonnelResponse(personnel);
+
+        return toPersonnelResponse(personnel);
     }
 
     /* Helper method */
@@ -212,5 +222,63 @@ public class PersonnelService {
         String randomDigits = String.format("%04d", randomNumber);
 
         return first + second + dayMonth + randomDigits;
+    }
+
+    public PersonnelResponse toPersonnelResponse(Personnel personnel) {
+        if (personnel == null) {
+            return null;
+        }
+
+        PersonnelResponse response = PersonnelResponse.builder()
+                .code(personnel.getCode())
+                .firstName(personnel.getFirstName())
+                .lastName(personnel.getLastName())
+                .gender(personnel.getGender() != null ? personnel.getGender().name() : null)
+                .avatarUrl(personnel.getAvatar())
+                .dob(personnel.getDob())
+                .email(personnel.getEmail())
+                .phoneNumber(personnel.getPhoneNumber())
+                .city(personnel.getCity())
+                .street(personnel.getStreet())
+                .description(personnel.getDescription())
+                .skills(personnel.getSkills())
+                .position(personnel.getPosition())
+                .accountId(personnel.getAccount() != null ? personnel.getAccount().getId() : null)
+                .role(personnel.getAccount() != null ? personnel.getAccount().getRole().name() : null)
+                .build();
+
+        Set<PrivilegeResponse> privilegeResponses = personnel.getPrivileges() != null
+                ? personnel.getPrivileges().stream()
+                .map(privilegeMapper::toPrivilegeResponse)
+                .collect(Collectors.toSet())
+                : Collections.emptySet();
+        response.setPrivileges(privilegeResponses);
+
+        Role role = personnel.getAccount() != null ? personnel.getAccount().getRole() : null;
+
+        if (role == Role.EMPLOYEE) {
+            Employee employee = employeeRepository.findById(personnel.getCode()).orElse(null);
+            if (employee != null) {
+                response.setDepartmentName(
+                        employee.getDepartment() != null ? employee.getDepartment().getName() : null
+                );
+                response.setTasks(employee.getTasks() != null ? employee.getTasks().stream().map(taskMapper::toTaskResponse).toList() : Collections.emptyList());
+            }
+
+        } else if (role == Role.MANAGER) {
+            Manager manager = managerRepository.findById(personnel.getCode()).orElse(null);
+            if (manager != null) {
+                response.setDepartmentName(
+                        manager.getDepartment() != null ? manager.getDepartment().getName() : null
+                );
+                response.setTasks(Collections.emptyList());
+            }
+
+        } else if (role == Role.ADMIN) {
+            response.setDepartmentName("Administration");
+            response.setTasks(Collections.emptyList());
+        }
+
+        return response;
     }
 }

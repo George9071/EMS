@@ -1,11 +1,11 @@
 package com._6.ems.dto.response;
 
-import com._6.ems.dto.request.AccountCreationRequest;
-import com._6.ems.entity.Account;
+import com._6.ems.entity.Task;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -29,5 +29,7 @@ public class PersonnelResponse {
     String position;
     String accountId;
     String role;
+    String departmentName;
+    List<TaskResponse> tasks;
     Set<PrivilegeResponse> privileges;
 }
