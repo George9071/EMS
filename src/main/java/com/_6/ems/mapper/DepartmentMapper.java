@@ -7,11 +7,12 @@ import com._6.ems.entity.Department;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring", uses = EmployeeMapper.class)
+@Mapper(componentModel = "spring", uses = {EmployeeMapper.class, ManagerMapper.class})
 public interface DepartmentMapper {
 
     @Mapping(source = "id", target = "department_id")
     @Mapping(source = "name", target = "department_name")
+    @Mapping(source = "manager", target = "manager")
     @Mapping(source = "employees", target = "employees")
     EmployeeInDepartmentResponse toEmployeeInDepartment(Department department);
 
@@ -19,7 +20,7 @@ public interface DepartmentMapper {
     @Mapping(source = "name", target = "department_name")
     @Mapping(source = "employeeNumber", target = "employee_number")
     @Mapping(source = "establishmentDate", target = "establishment_date")
-    @Mapping(source = "manager.code", target = "manager_code")
+    @Mapping(source = "manager", target = "manager")
     DepartmentResponse toDepartmentResponse(Department department);
 
     @Mapping(target = "id", ignore = true)
