@@ -29,7 +29,7 @@ public class PersonnelController {
     @GetMapping("/myInfo")
     ApiResponse<PersonnelResponse> getMyInfo(){
         return ApiResponse.<PersonnelResponse>builder()
-                .result(personnelMapper.toPersonnelResponse(personnelService.getMyInfo()))
+                .result(personnelService.getMyInfo())
                 .build();
     }
 
@@ -67,7 +67,7 @@ public class PersonnelController {
     ApiResponse<PersonnelResponse> createPersonnel(@RequestBody @Valid PersonnelCreationRequest request){
         ApiResponse<PersonnelResponse> apiResponse = new ApiResponse<>();
 
-        apiResponse.setResult(personnelMapper.toPersonnelResponse(personnelService.createPersonnel(request)));
+        apiResponse.setResult(personnelService.createPersonnel(request));
 
         return apiResponse;
     }
@@ -75,7 +75,7 @@ public class PersonnelController {
     @PatchMapping("/{code}")
     ApiResponse<PersonnelResponse> updateUser(@PathVariable String code, @RequestBody PersonnelUpdateRequest request){
         return ApiResponse.<PersonnelResponse>builder()
-                .result(personnelMapper.toPersonnelResponse(personnelService.updatePersonnel(code, request)))
+                .result(personnelService.updatePersonnel(code, request))
                 .build();
     }
 
