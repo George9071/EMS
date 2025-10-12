@@ -3,6 +3,9 @@ package com._6.ems.controller;
 import java.time.LocalDate;
 import java.util.List;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -14,83 +17,88 @@ import com._6.ems.service.AttendanceService;
 
 @RestController
 @RequestMapping("/attendance")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class AttendanceController {
 
-    @Autowired
     AttendanceService attendanceService;
 
     @PostMapping("/checkIn")
     public ApiResponse<AttendanceRecordResponse> checkIn() {
         AttendanceRecordResponse record = attendanceService.checkIn();
         return ApiResponse.<AttendanceRecordResponse>builder()
-            .result(record)
-            .message("Check-in successful!, time check-in: " + record.getCheckIn())
-            .build();
+                .result(record)
+                .message("Check-in successful!, time check-in: " + record.getCheckIn())
+                .build();
     }
 
     @PostMapping("/checkOut")
     public ApiResponse<AttendanceRecordResponse> checkOut() {
         AttendanceRecordResponse record = attendanceService.checkOut();
         return ApiResponse.<AttendanceRecordResponse>builder()
-            .result(record)
-            .message("Check-out successful!, time check-out: " + record.getCheckOut())
-            .build();
+                .result(record)
+                .message("Check-out successful!, time check-out: " + record.getCheckOut())
+                .build();
     }
 
-    @GetMapping("/{date}")
+    @GetMapping("/employee/{code}/{date}")
     public ApiResponse<AttendanceRecordResponse> getAttendanceByDate(
-            @RequestParam String code,
+            @PathVariable String code,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
-        AttendanceRecordResponse record = attendanceService.getRecordByDate(code, date);
+        var record = attendanceService.getRecordByDate(code, date);
         return ApiResponse.<AttendanceRecordResponse>builder()
                 .result(record)
-                .message("Fetch record success!")
+                .message("Fetched record successfully")
                 .build();
     }
 
     @GetMapping("/today")
     public ApiResponse<List<AttendanceRecordResponse>> getAllRecordToday() {
-        log.info("code go here!");
-
-        List<AttendanceRecordResponse> result = attendanceService.getAllRecordToday();
-
+        var result = attendanceService.getAllRecordToday();
         return ApiResponse.<List<AttendanceRecordResponse>>builder()
                 .result(result)
-                .message("Fetch all records for today successful!")
+                .message("Fetched all records for today")
                 .build();
     }
 
-    @GetMapping("/interval")
+    @GetMapping("/month")
     public ApiResponse<List<AttendanceRecordResponse>> getAllRecordByMonthAndYear(
             @RequestParam int month,
             @RequestParam int year) {
 
-        List<AttendanceRecordResponse> result = attendanceService.getAllRecordByMonthAndYear(month, year);
+        if (month < 1 || month > 12) throw new IllegalArgumentException("month must be 1..12");
+
+        var result = attendanceService.getAllRecordByMonthAndYear(month, year);
         return ApiResponse.<List<AttendanceRecordResponse>>builder()
                 .result(result)
+                .message("Fetched monthly records")
                 .build();
     }
 
-    @GetMapping("/employee/{employeeCode}")
+    @GetMapping("/employee/{code}")
     public ApiResponse<List<AttendanceRecordResponse>> getAllRecordByEmployeeCode(
-            @PathVariable String employeeCode) {
-        List<AttendanceRecordResponse> result = attendanceService.getAllRecordByEmployeeCode(employeeCode);
+            @PathVariable String code) {
+        var result = attendanceService.getAllRecordByEmployeeCode(code);
         return ApiResponse.<List<AttendanceRecordResponse>>builder()
                 .result(result)
+                .message("Fetched records by employee")
                 .build();
     }
 
-    @GetMapping("/{employeeCode}/range")
+    @GetMapping("/employee/{code}/range")
     public ApiResponse<List<AttendanceRecordResponse>> getAllRecordByEmployeeCodeBetween(
-            @PathVariable String employeeCode,
+            @PathVariable String code,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
-        List<AttendanceRecordResponse> result =
-                attendanceService.getAllRecordByEmployeeCodeBetween(employeeCode, start, end);
+
+        if (end.isBefore(start)) throw new IllegalArgumentException("end must be >= start");
+
+        var result = attendanceService.getAllRecordByEmployeeCodeBetween(code, start, end);
         return ApiResponse.<List<AttendanceRecordResponse>>builder()
                 .result(result)
+                .message("Fetched records in range")
                 .build();
     }
 }

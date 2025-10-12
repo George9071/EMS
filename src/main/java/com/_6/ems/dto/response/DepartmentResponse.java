@@ -19,5 +19,5 @@ public class DepartmentResponse {
     String department_name;
     int employee_number;
     LocalDate establishment_date;
-    String manager_code;
+    ManagerResponse manager;
 }

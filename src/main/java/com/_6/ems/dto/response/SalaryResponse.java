@@ -11,7 +11,7 @@ import lombok.experimental.FieldDefaults;
 public class SalaryResponse {
     String id;
     String personnel_code;
-    int month; 
+    int month;
     int year;
     int full_day;
     int half_day;

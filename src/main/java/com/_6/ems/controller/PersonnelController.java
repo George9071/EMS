@@ -87,10 +87,10 @@ public class PersonnelController {
     }
 
     @DeleteMapping("/{code}")
-    public ResponseEntity<ApiResponse<PersonnelResponse>> deletePersonnel(@PathVariable String code) {
-        ApiResponse<PersonnelResponse> response = ApiResponse.<PersonnelResponse>builder()
-                .result(personnelService.deletePersonnel(code))
+    public ApiResponse<String> deletePersonnel(@PathVariable String code) {
+        personnelService.deletePersonnel(code);
+        return ApiResponse.<String>builder()
+                .result("Personnel has been deleted")
                 .build();
-        return ResponseEntity.ok().body(response);
     }
 }

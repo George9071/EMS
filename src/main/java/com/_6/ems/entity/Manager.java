@@ -30,4 +30,11 @@ public class Manager {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "departmentID", referencedColumnName = "id")
     Department department;
+
+    public void moveToDepartment(Department d) {
+        if (this.department == d) return;
+        if (this.department != null && this.department.getManager() == this) this.department.setManager(null);
+        this.department = d;
+        if (d != null && d.getManager() != this) d.setManager(this);
+    }
 }

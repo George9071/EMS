@@ -47,6 +47,7 @@ public class PersonnelService {
     PrivilegeMapper privilegeMapper;
     ManagerRepository managerRepository;
     private final TaskMapper taskMapper;
+    private final DepartmentRepository departmentRepository;
 
     @Transactional
     public PersonnelResponse createPersonnel(PersonnelCreationRequest request) {
@@ -67,11 +68,23 @@ public class PersonnelService {
     }
 
     @Transactional
-    public PersonnelResponse deletePersonnel(String code) {
+    public void deletePersonnel(String code) {
         Personnel personnel = personnelRepository.findById(code)
                 .orElseThrow(() -> new AppException(ErrorCode.PERSONNEL_NOT_FOUND));
+
+        employeeRepository.findByCode(code).ifPresent(employee -> {
+            Department department  = employee.getDepartment();
+            if (department != null) {
+                if (department.getEmployees() != null) department.removeEmployee(employee);
+                employee.setDepartment(null);
+                departmentRepository.save(department);
+            }
+
+            employeeRepository.delete(employee);
+        });
+
         Account account = personnel.getAccount();
-        accountRepository.delete(account);
+        if (account != null) accountRepository.delete(account);
         personnelRepository.delete(personnel);
 
         return toPersonnelResponse(personnel);

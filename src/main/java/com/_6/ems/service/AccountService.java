@@ -60,7 +60,11 @@ public class AccountService {
             .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_EXISTED));
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('AUTHORIZE_ADMIN')")
     public void deleteAccount(String accountId) {
-        accountRepository.deleteById(accountId);
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_EXISTED));
+
+        accountRepository.delete(account);
     }
 }

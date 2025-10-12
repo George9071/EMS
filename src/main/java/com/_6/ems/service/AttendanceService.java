@@ -19,6 +19,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com._6.ems.dto.response.AttendanceRecordResponse;
@@ -34,10 +35,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class AttendanceService {
 
     AttendanceRepository attendanceRepository;
-    EmployeeRepository employeeRepository;
     PersonnelRepository personnelRepository;
     AttendanceMapper attendanceMapper;
     SalaryRepository salaryRepository;
+    SalaryService salaryService;
 
     @Transactional
     public AttendanceRecordResponse checkIn() {
@@ -64,8 +65,8 @@ public class AttendanceService {
     public AttendanceRecordResponse checkOut() {
         String code = SecurityUtil.getCurrentUserCode();
 
-        employeeRepository.findById(code)
-                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
+        personnelRepository.findById(code)
+                .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
 
         LocalDate today = LocalDate.now();
 
@@ -82,7 +83,7 @@ public class AttendanceService {
         int year = today.getYear();
 
         Salary salary = salaryRepository.findByOwner_CodeAndMonthAndYear(code, month, year)
-                .orElseThrow(() -> new AppException(ErrorCode.ATTENDANCE_RECORD_NOT_FOUND));
+                .orElse(salaryService.createSalary(code, month, year));
 
         if (worked >= 3) {
             record.setType(AttendanceType.FULL_DAY);
@@ -101,55 +102,60 @@ public class AttendanceService {
         return attendanceMapper.toAttendanceRecordResponse(record);
     }
 
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMIN') or #employeeCode == authentication.name")
     public AttendanceRecordResponse getRecordByDate(String employeeCode, LocalDate date) {
         AttendanceRecord record = attendanceRepository
                 .findByPersonnel_CodeAndDate(employeeCode, date)
-                .orElseThrow(()
-                        -> new AppException(ErrorCode.ATTENDANCE_RECORD_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.ATTENDANCE_RECORD_NOT_FOUND));
 
         return attendanceMapper.toAttendanceRecordResponse(record);
     }
 
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMIN')")
     public List<AttendanceRecordResponse> getAllRecordToday() {
         LocalDate today = LocalDate.now();
-
         List<AttendanceRecord> records = attendanceRepository.findByDateBetween(today, today);
-        log.info("records: {}", records);
-
         return records.stream()
                 .map(attendanceMapper::toAttendanceRecordResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMIN')")
     public List<AttendanceRecordResponse> getAllRecordByMonthAndYear(int month, int year) {
-        LocalDate startDate = LocalDate.of(year, month, 1);
-        LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth()); // last day of month
-
-        List<AttendanceRecord> records = attendanceRepository.findByDateBetween(startDate, endDate);
+        LocalDate start = LocalDate.of(year, month, 1);
+        LocalDate end   = start.withDayOfMonth(start.lengthOfMonth());
+        List<AttendanceRecord> records = attendanceRepository.findByDateBetween(start, end);
 
         return records.stream()
                 .map(attendanceMapper::toAttendanceRecordResponse)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMIN') or #code == authentication.name")
     public List<AttendanceRecordResponse> getAllRecordByEmployeeCode(String code) {
-        employeeRepository.findById(code)
-                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
+        personnelRepository.findById(code)
+                .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
 
-        List<AttendanceRecord> records = attendanceRepository.findByPersonnel_Code(code);
-
-        return records.stream()
+        return attendanceRepository.findByPersonnel_Code(code)
+                .stream()
                 .map(attendanceMapper::toAttendanceRecordResponse)
                 .collect(Collectors.toList());
     }
 
-    public List<AttendanceRecordResponse> getAllRecordByEmployeeCodeBetween(String code, LocalDate start, LocalDate end) {
-        employeeRepository.findById(code)
-                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasRole('ADMIN') or #code == authentication.name")
+    public List<AttendanceRecordResponse> getAllRecordByEmployeeCodeBetween(String code,
+                                                                            LocalDate start,
+                                                                            LocalDate end) {
+        personnelRepository.findById(code)
+                .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
 
-        List<AttendanceRecord> records = attendanceRepository.findByPersonnel_CodeAndDateBetween(code, start, end);
-
-        return records.stream()
+        return attendanceRepository.findByPersonnel_CodeAndDateBetween(code, start, end)
+                .stream()
                 .map(attendanceMapper::toAttendanceRecordResponse)
                 .collect(Collectors.toList());
     }
