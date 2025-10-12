@@ -7,7 +7,7 @@ import com._6.ems.entity.Department;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring", uses = EmployeeMapper.class)
+@Mapper(componentModel = "spring", uses = {EmployeeMapper.class, ManagerMapper.class})
 public interface DepartmentMapper {
 
     @Mapping(source = "id", target = "department_id")

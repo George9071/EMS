@@ -73,7 +73,7 @@ public class DepartmentService {
 
     @Transactional(readOnly = true)
     public List<DepartmentResponse> getAllDepartments() {
-        return departmentRepository.findAll()
+        return departmentRepository.findAllWithManagerDetails()
                 .stream()
                 .map(departmentMapper::toDepartmentResponse)
                 .collect(Collectors.toList());

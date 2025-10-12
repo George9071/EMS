@@ -1,6 +1,5 @@
 package com._6.ems.mapper;
 
-import com._6.ems.dto.request.ManagerCreationRequest;
 import com._6.ems.dto.response.ManagerResponse;
 import com._6.ems.entity.Manager;
 import org.mapstruct.Mapper;
