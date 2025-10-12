@@ -3,11 +3,15 @@ package com._6.ems.service;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com._6.ems.dto.response.AttendanceOverviewResponse;
+import com._6.ems.dto.response.AttendanceRecordDTO;
 import com._6.ems.entity.Personnel;
 import com._6.ems.entity.Salary;
+import com._6.ems.enums.AttendanceStatus;
 import com._6.ems.enums.AttendanceType;
 import com._6.ems.exception.AppException;
 import com._6.ems.exception.ErrorCode;
@@ -25,7 +29,6 @@ import org.springframework.stereotype.Service;
 import com._6.ems.dto.response.AttendanceRecordResponse;
 import com._6.ems.entity.AttendanceRecord;
 import com._6.ems.repository.AttendanceRepository;
-import com._6.ems.repository.EmployeeRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -33,6 +36,8 @@ import org.springframework.transaction.annotation.Transactional;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class AttendanceService {
+
+    private static final double STANDARD_WORK_HOURS = 8.0;
 
     AttendanceRepository attendanceRepository;
     PersonnelRepository personnelRepository;
@@ -158,5 +163,124 @@ public class AttendanceService {
                 .stream()
                 .map(attendanceMapper::toAttendanceRecordResponse)
                 .collect(Collectors.toList());
+    }
+
+    public AttendanceOverviewResponse getAttendanceOverview(
+            String personnelCode,
+            Integer month,
+            Integer year) {
+
+        List<AttendanceRecord> records = attendanceRepository
+                .findByPersonnelCodeAndMonthAndYear(personnelCode, month, year);
+
+        // Tính toán các chỉ số
+        int totalDays = records.size();
+        int presentDays = (int) records.stream()
+                .filter(r -> r.getStatus() == AttendanceStatus.PRESENT ||
+                        r.getStatus() == AttendanceStatus.WORK_FROM_OFFICE ||
+                        r.getStatus() == AttendanceStatus.WORK_FROM_HOME)
+                .count();
+        int lateDays = (int) records.stream()
+                .filter(r -> Boolean.TRUE.equals(r.getIsLate()))
+                .count();
+        int absentDays = (int) records.stream()
+                .filter(r -> r.getStatus() == AttendanceStatus.ABSENT)
+                .count();
+        double averageHours = records.stream()
+                .mapToDouble(r -> r.getWorkHours() != null ? r.getWorkHours() : 0)
+                .average()
+                .orElse(0.0);
+
+        List<AttendanceRecordDTO> recordDTOs = mapToDTO(records);
+
+        return AttendanceOverviewResponse.builder()
+                .totalDays(totalDays)
+                .presentDays(presentDays)
+                .lateDays(lateDays)
+                .absentDays(absentDays)
+                .averageHours(averageHours)
+                .records(recordDTOs)
+                .build();
+    }
+
+    private List<AttendanceRecordDTO> mapToDTO(List<AttendanceRecord> records) {
+        return records.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private AttendanceRecordDTO mapToDTO(AttendanceRecord record) {
+        LocalTime checkIn = record.getCheckIn() != null ?
+                record.getCheckIn().toLocalTime() : null;
+        LocalTime checkOut = record.getCheckOut() != null ?
+                record.getCheckOut().toLocalTime() : null;
+
+        String workHoursFormatted = formatWorkHours(record.getWorkHours());
+
+        String dayOfWeek = getDayOfWeekInEnglish(record.getDate());
+
+        // Kiểm tra có đủ giờ không
+        boolean notEnoughHour = record.getWorkHours() != null &&
+                record.getWorkHours() < STANDARD_WORK_HOURS;
+
+        return AttendanceRecordDTO.builder()
+                .date(record.getDate())
+                .day(dayOfWeek)
+                .checkIn(checkIn)
+                .checkOut(checkOut)
+                .workHours(workHoursFormatted)
+                .status(record.getStatus())
+                .notEnoughHour(notEnoughHour)
+                .build();
+    }
+
+    // Format số giờ thành "10h 2m"
+    private String formatWorkHours(Double hours) {
+        if (hours == null || hours == 0) {
+            return "0m";
+        }
+
+        int hourPart = hours.intValue();
+        int minutePart = (int) ((hours - hourPart) * 60);
+
+        if (minutePart == 0) {
+            return hourPart + "h";
+        }
+
+        return hourPart + "h " + minutePart + "m";
+    }
+
+    // Lấy tên ngày trong tuần bằng tiếng Anh
+    private String getDayOfWeekInEnglish(LocalDate date) {
+        if (date == null) {
+            return "";
+        }
+        return date.getDayOfWeek().getDisplayName(
+                java.time.format.TextStyle.FULL,
+                java.util.Locale.ENGLISH
+        );
+    }
+
+    // Tính work hours từ check-in và check-out
+    public void calculateWorkHours(AttendanceRecord attendanceRecord) {
+        if (attendanceRecord.getCheckIn() != null && attendanceRecord.getCheckOut() != null) {
+            Duration duration = Duration.between(
+                    attendanceRecord.getCheckIn(),
+                    attendanceRecord.getCheckOut()
+            );
+
+            // Trừ 1 giờ nghỉ trưa
+            long totalMinutes = duration.toMinutes() - 60;
+            double hours = totalMinutes / 60.0;
+
+            attendanceRecord.setWorkHours(Math.round(hours * 100.0) / 100.0);
+
+            // Kiểm tra không đủ giờ
+            attendanceRecord.setNotEnoughHours(hours < STANDARD_WORK_HOURS);
+
+            if (hours < STANDARD_WORK_HOURS) {
+                attendanceRecord.setMissingHours(STANDARD_WORK_HOURS - hours);
+            }
+        }
     }
 }

@@ -30,6 +30,15 @@ public interface AttendanceRepository extends JpaRepository<AttendanceRecord, St
     // Records in a date range (inclusive)
     List<AttendanceRecord> findByDateBetween(LocalDate startDate, LocalDate endDate);
 
+    @Query("SELECT a FROM AttendanceRecord a WHERE a.personnel.code = :personnelCode " +
+            "AND MONTH(a.date) = :month AND YEAR(a.date) = :year " +
+            "ORDER BY a.date ASC")
+    List<AttendanceRecord> findByPersonnelCodeAndMonthAndYear(
+            @Param("personnelCode") String personnelCode,
+            @Param("month") Integer month,
+            @Param("year") Integer year
+    );
+
     /* Advanced */
     long countByPersonnel_CodeAndDateBetweenAndType(String code,
                                                     LocalDate start,

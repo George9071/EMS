@@ -26,18 +26,4 @@ public class CorsConfig {
 
         return new CorsFilter(source);
     }
-
-//    /* Only using Spring MVC (no auth) */
-//    @Bean
-//    public WebMvcConfigurer corsConfigurer(){
-//        return new WebMvcConfigurer(){
-//            @Override
-//            public void addCorsMappings(CorsRegistry registry){
-//                registry.addMapping("/**")  // Apply to all endpoints
-//                        .allowedOrigins("http://localhost:5173")  // Allow this origin
-//                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")  // Allow specific methods
-//                        .allowedHeaders("*");  // Allow all headers
-//            }
-//        };
-//    }
 }

@@ -3,12 +3,15 @@ package com._6.ems.controller;
 import java.time.LocalDate;
 import java.util.List;
 
+import com._6.ems.dto.response.AttendanceOverviewResponse;
+import com._6.ems.utils.SecurityUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com._6.ems.dto.response.ApiResponse;
@@ -100,5 +103,34 @@ public class AttendanceController {
                 .result(result)
                 .message("Fetched records in range")
                 .build();
+    }
+
+    @GetMapping("/overview")
+    public ResponseEntity<ApiResponse<AttendanceOverviewResponse>> getAttendanceOverview(
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year) {
+
+        if (month == null || year == null) {
+            LocalDate now = LocalDate.now();
+            month = month != null ? month : now.getMonthValue();
+            year = year != null ? year : now.getYear();
+        }
+
+        if (month < 1 || month > 12) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.<AttendanceOverviewResponse>builder()
+                            .code(400)
+                            .message("Month must be between 1 and 12")
+                            .build());
+        }
+
+        AttendanceOverviewResponse overview = attendanceService
+                .getAttendanceOverview(SecurityUtil.getCurrentUserCode(), month, year);
+
+        return ResponseEntity.ok(ApiResponse.<AttendanceOverviewResponse>builder()
+                .code(200)
+                .message("Get attendance overview successfully")
+                .result(overview)
+                .build());
     }
 }
