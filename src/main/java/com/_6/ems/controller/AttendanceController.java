@@ -3,8 +3,11 @@ package com._6.ems.controller;
 import java.time.LocalDate;
 import java.util.List;
 
+import com._6.ems.dto.response.AttendanceMonthlySummary;
 import com._6.ems.dto.response.AttendanceOverviewResponse;
 import com._6.ems.utils.SecurityUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -58,8 +61,9 @@ public class AttendanceController {
     }
 
     @GetMapping("/today")
-    public ApiResponse<List<AttendanceRecordResponse>> getAllRecordToday() {
-        var result = attendanceService.getAllRecordToday();
+    @Operation(summary = "Get detail check-in/check-out list of all employees today")
+    public ApiResponse<List<AttendanceRecordResponse>> getTodayAttendanceSummary() {
+        var result = attendanceService.getTodayAttendanceSummary();
         return ApiResponse.<List<AttendanceRecordResponse>>builder()
                 .result(result)
                 .message("Fetched all records for today")
@@ -67,6 +71,7 @@ public class AttendanceController {
     }
 
     @GetMapping("/month")
+    @Operation(summary = "Get detail check-in/check-out list of all employees by month")
     public ApiResponse<List<AttendanceRecordResponse>> getAllRecordByMonthAndYear(
             @RequestParam int month,
             @RequestParam int year) {
@@ -78,6 +83,28 @@ public class AttendanceController {
                 .result(result)
                 .message("Fetched monthly records")
                 .build();
+    }
+
+    @GetMapping("/summary")
+    @Operation
+            (summary = "Get all attendance details (present days, late days, absent days, avg hours) of all employees")
+    public ApiResponse<List<AttendanceMonthlySummary>> getMonthlySummary(
+            @Parameter(description = "Month [1..12]", example = "8") @RequestParam int month,
+            @Parameter(description = "Year", example = "2025") @RequestParam int year) {
+
+        var result = attendanceService.getMonthlySummary(month, year);
+        return ApiResponse.<List<AttendanceMonthlySummary>>builder()
+                .result(result)
+                .message("Fetched monthly records")
+                .build();
+    }
+
+    @GetMapping("/records")
+    @Operation(summary = "Get all attendance records by date or interval")
+    public List<AttendanceRecordResponse> getAllRecordsByDateOrInterval(
+            @Parameter(description = "2025-12-01") @RequestParam(required = true) LocalDate start,
+            @Parameter(description = "2025-12-01") @RequestParam(required = true) LocalDate end) {
+        return attendanceService.getAllRecordsByDateOrInterval(start, end);
     }
 
     @GetMapping("/employee/{code}")
@@ -98,7 +125,7 @@ public class AttendanceController {
 
         if (end.isBefore(start)) throw new IllegalArgumentException("end must be >= start");
 
-        var result = attendanceService.getAllRecordByEmployeeCodeBetween(code, start, end);
+        var result = attendanceService.getAllRecordByEmployeeCodeInterval(code, start, end);
         return ApiResponse.<List<AttendanceRecordResponse>>builder()
                 .result(result)
                 .message("Fetched records in range")

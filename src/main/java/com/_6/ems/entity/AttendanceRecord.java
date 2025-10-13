@@ -29,7 +29,7 @@ public class AttendanceRecord {
     @Column(name = "id")
     String id;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = {})
     @JoinColumn(name = "personnel_code", referencedColumnName = "code")
     Personnel personnel;
 

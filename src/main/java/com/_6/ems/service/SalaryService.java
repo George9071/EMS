@@ -137,7 +137,9 @@ public class SalaryService {
             fullRate = FULL_DAY_EMPLOYEE_VALUE;
             halfRate = HALF_DAY_EMPLOYEE_VALUE;
         } else {
-            throw new IllegalStateException("Personnel not found!");
+            fullRate = FULL_DAY_EMPLOYEE_VALUE;
+            halfRate = HALF_DAY_EMPLOYEE_VALUE;
+            // throw new IllegalStateException("Personnel not found!");
         }
 
         double realPay = full * fullRate + half * halfRate - absence * ABSENCE_VALUE;
