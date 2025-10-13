@@ -64,6 +64,21 @@ public class PersonnelService {
 
         personnel = personnelRepository.save(personnel);
 
+        if(request.getAccountCreationRequest().getRole() == Role.EMPLOYEE) {
+            employeeRepository.save(
+                    Employee.builder()
+                            .code(personnel.getCode())
+                            .informationRecord(personnel)
+                    .build());
+        } else if(request.getAccountCreationRequest().getRole() == Role.MANAGER) {
+            managerRepository.save(
+                    Manager.builder()
+                            .code(personnel.getCode())
+                            .informationRecord(personnel)
+                            .build()
+            );
+        }
+
         return toPersonnelResponse(personnel);
     }
 
