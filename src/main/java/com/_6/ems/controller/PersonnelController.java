@@ -10,6 +10,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -79,7 +80,10 @@ public class PersonnelController {
                 .build();
     }
 
-    @PostMapping("/upload-avatar")
+    @PostMapping(
+            value="/upload-avatar",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ApiResponse<PersonnelResponse> uploadAvatar(@RequestParam("file") MultipartFile file) {
         return ApiResponse.<PersonnelResponse>builder()
                 .result(personnelService.uploadAvatar(file))
