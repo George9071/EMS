@@ -4,9 +4,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com._6.ems.dto.response.*;
@@ -14,6 +12,7 @@ import com._6.ems.entity.Personnel;
 import com._6.ems.entity.Salary;
 import com._6.ems.enums.AttendanceStatus;
 import com._6.ems.enums.AttendanceType;
+import com._6.ems.enums.WorkLocation;
 import com._6.ems.exception.AppException;
 import com._6.ems.exception.ErrorCode;
 import com._6.ems.mapper.AttendanceMapper;
@@ -39,6 +38,7 @@ public class AttendanceService {
 
     private static final double STANDARD_WORK_HOURS = 8.0;
     private static final LocalTime SHIFT_START = LocalTime.of(9, 0);
+    private static final LocalTime SHIFT_END = LocalTime.of(18, 0);
     private static final int LUNCH_MINUTES = 60;
 
     AttendanceRepository attendanceRepository;
@@ -56,12 +56,43 @@ public class AttendanceService {
 
         LocalDate today = LocalDate.now();
 
-        AttendanceRecord record = attendanceRepository.findByPersonnel_CodeAndDateForUpdate(code, today)
-                .orElseGet(() -> AttendanceRecord.builder()
-                        .personnel(personnel)
-                        .date(today)
-                        .status(AttendanceStatus.PRESENT)
-                        .build());
+        // If there is an open record (no checkout) — lock it
+        Optional<AttendanceRecord> openOpt = attendanceRepository.findOpenForUpdate(code);
+        if (openOpt.isPresent()) {
+            AttendanceRecord open = openOpt.get();
+            if (open.getDate().isEqual(today))
+                throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKIN);
+
+            open.setCheckOut(open.getCheckIn());
+            open.setType(AttendanceType.ABSENCE);
+            calculateWorkHours(open);
+
+            int month = open.getDate().getMonthValue();
+            int year  = open.getDate().getYear();
+
+            Salary salary = salaryRepository.findByOwner_CodeAndMonthAndYear(code, month, year)
+                    .orElseGet(() -> {
+                        try {
+                            return salaryService.createSalary(code, month, year);
+                        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                            return salaryRepository.findByOwner_CodeAndMonthAndYear(code, month, year).orElseThrow();
+                        }
+                    });
+
+            salary.setAbsence(salary.getAbsence() + 1);
+            attendanceRepository.save(open);
+            salaryRepository.save(salary);
+        }
+
+        AttendanceRecord record = attendanceRepository
+                .findByPersonnel_CodeAndDateForUpdate(code, today)
+                .orElseGet(() -> attendanceRepository.save(
+                        AttendanceRecord.builder()
+                                .personnel(personnel)
+                                .date(today)
+                                .status(AttendanceStatus.PRESENT)
+                                .build()
+                ));
 
         if (record.getCheckIn() != null) throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKIN);
 
@@ -155,9 +186,10 @@ public class AttendanceService {
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN') or #code == authentication.name")
-    public List<AttendanceRecordResponse> getAllRecordByEmployeeCodeInterval(String code,
-                                                                            LocalDate start,
-                                                                            LocalDate end) {
+    public List<AttendanceRecordResponse> getAllRecordByEmployeeCodeInterval(
+            String code,
+            LocalDate start,
+            LocalDate end) {
         personnelRepository.findById(code)
                 .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
 
@@ -191,36 +223,18 @@ public class AttendanceService {
         List<AttendanceRecord> records = attendanceRepository
                 .findByPersonnelCodeAndMonthAndYear(personnelCode, month, year);
 
-        // Tính toán các chỉ số
-        int totalDays = records.size();
-        int presentDays = (int) records.stream()
-                .filter(r -> r.getStatus() == AttendanceStatus.PRESENT ||
-                        r.getStatus() == AttendanceStatus.WORK_FROM_OFFICE ||
-                        r.getStatus() == AttendanceStatus.WORK_FROM_HOME)
-                .count();
-        int lateDays = (int) records.stream()
-                .filter(r -> Boolean.TRUE.equals(r.getIsLate()))
-                .count();
-        int absentDays = (int) records.stream()
-                .filter(r -> r.getStatus() == AttendanceStatus.ABSENT)
-                .count();
-        double averageHours = records.stream()
-                .mapToDouble(r -> r.getWorkHours() != null ? r.getWorkHours() : 0)
-                .average()
-                .orElse(0.0);
-
-        List<AttendanceRecordDTO> recordDTOs = mapToDTO(records);
+        Metrics m = computeMetrics(records);
+        List<AttendanceRecordDTO> recordDTOs = attendanceMapper.toDTOList(records);
 
         return AttendanceOverviewResponse.builder()
-                .totalDays(totalDays)
-                .presentDays(presentDays)
-                .lateDays(lateDays)
-                .absentDays(absentDays)
-                .averageHours(averageHours)
+                .totalDays(m.totalDays)
+                .presentDays(m.presentDays)
+                .lateDays(m.lateDays)
+                .absentDays(m.absentDays)
+                .averageHours(m.avgHours)
                 .records(recordDTOs)
                 .build();
     }
-
 
 
     @Transactional(readOnly = true)
@@ -233,51 +247,49 @@ public class AttendanceService {
                 attendanceRepository.findAllWithPersonnelByDateBetween(start, end);
 
         // group by employee code
-        Map<String, List<AttendanceRecord>> data =
-                records.stream().collect(Collectors.groupingBy(record -> record.getPersonnel().getCode()));
+        Map<String, List<AttendanceRecord>> data = records.stream()
+                .collect(Collectors.groupingBy(record -> record.getPersonnel().getCode()));
 
-        return data.entrySet().stream().map(employee -> {
-                    String code = employee.getKey();
-                    List<AttendanceRecord> attendances = employee.getValue();
+        return data.entrySet().stream()
+                .map(entry -> {
+                    String code = entry.getKey();
+                    List<AttendanceRecord> attendances = entry.getValue();
 
-                    int presentDays = (int) attendances.stream().filter(r ->
-                            r.getStatus() == AttendanceStatus.PRESENT
-                                    || r.getStatus() == AttendanceStatus.WORK_FROM_OFFICE
-                                    || r.getStatus() == AttendanceStatus.WORK_FROM_HOME
-                    ).count();
+                    Metrics m = computeMetrics(attendances);
 
-                    int lateDays = (int) attendances.stream().filter(r -> Boolean.TRUE.equals(r.getIsLate())).count();
-
-                    int absentDays = (int) attendances.stream().filter(r ->
-                            r.getStatus() == AttendanceStatus.ABSENT
-                    ).count();
-
-                    double avgHours = attendances.stream()
-                            .mapToDouble(r -> r.getWorkHours() != null ? r.getWorkHours() : 0.0)
-                            .average().orElse(0.0);
-
-                    Personnel p = attendances.get(0).getPersonnel();
-                    String name = (p.getFirstName() == null ? "" : p.getFirstName()) +
-                            " " +
-                            (p.getLastName() == null ? "" : p.getLastName());
+                    Personnel p = attendances.getFirst().getPersonnel();
+                    String first = p.getFirstName() != null ? p.getFirstName() : "";
+                    String last  = p.getLastName()  != null ? p.getLastName()  : "";
+                    String name  = (first + " " + last).trim();
 
                     return AttendanceMonthlySummary.builder()
                             .code(code)
-                            .name(name.trim())
-                            .presentDays(presentDays)
-                            .lateDays(lateDays)
-                            .absentDays(absentDays)
-                            .avgHours(avgHours)
+                            .name(name)
+                            .presentDays(m.presentDays)
+                            .lateDays(m.lateDays)
+                            .absentDays(m.absentDays)
+                            .avgHours(m.avgHours)
                             .build();
                 })
                 .toList();
 
     }
 
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
+    public int syncBetween(LocalDate start, LocalDate end) {
+        List<AttendanceRecord> records = attendanceRepository.findByDateBetween(start, end);
+        int updated = 0;
+        for (AttendanceRecord r : records) {
+            sync(r);
+            updated++;
+        }
+        return updated;
+    }
 
     /* Helper methods */
-    private int duration(LocalDateTime start, LocalDateTime end) {
-        return (int) Duration.between(start, end).toMinutes();
+    private long duration(LocalDateTime start, LocalDateTime end) {
+        return Duration.between(start, end).toMinutes();
     }
 
     private void checkLate(AttendanceRecord record) {
@@ -290,14 +302,15 @@ public class AttendanceService {
         record.setLateMinutes(isLate ? late : 0);
     }
 
+    // Classify type of record (FULLDAY | HALFDAY | ABSENCE | OVERTIME | UNKNOWN)
     private void classify(AttendanceRecord record) {
-        double hrs = record.getWorkHours() == null ? 0.0 : record.getWorkHours();
-        if (hrs >= 8.0) record.setType(AttendanceType.FULL_DAY);
-        else if (hrs >= 4.0) record.setType(AttendanceType.HALF_DAY);
+        double duration = record.getWorkHours() == null ? 0.0 : record.getWorkHours();
+        if (duration >= 8.0) record.setType(AttendanceType.FULL_DAY);
+        else if (duration >= 4.0) record.setType(AttendanceType.HALF_DAY);
         else record.setType(AttendanceType.ABSENCE);
     }
 
-    // Tính work hours từ check-in và check-out
+    // Calculate work hours from duration(check-in,check-out)
     private void calculateWorkHours(AttendanceRecord record) {
         if (record.getCheckIn() != null && record.getCheckOut() != null) {
             Duration duration = Duration.between(
@@ -305,13 +318,12 @@ public class AttendanceService {
                     record.getCheckOut()
             );
 
-            // Trừ 1 giờ nghỉ trưa
-            long totalMinutes = duration.toMinutes() - 60;
+            // skip lunch break
+            long totalMinutes = duration.toMinutes() - LUNCH_MINUTES;
             double hours = totalMinutes / 60.0;
 
             record.setWorkHours(Math.round(hours * 100.0) / 100.0);
-
-            // Kiểm tra không đủ giờ
+            // Check if not enough standard work hours
             record.setNotEnoughHours(hours < STANDARD_WORK_HOURS);
 
             if (hours < STANDARD_WORK_HOURS) {
@@ -320,83 +332,104 @@ public class AttendanceService {
         }
     }
 
-    // Lấy tên ngày trong tuần bằng tiếng Anh
-    private String getDayOfWeekInEnglish(LocalDate date) {
-        if (date == null) return "";
+    private void sync(AttendanceRecord r) {
+        LocalDate date = r.getDate();
+        LocalDateTime in  = r.getCheckIn();
+        LocalDateTime out = r.getCheckOut();
 
-        return date.getDayOfWeek().getDisplayName(
-                java.time.format.TextStyle.FULL,
-                java.util.Locale.ENGLISH
-        );
+        double workHours = 0.0;
+        boolean isLate = false;
+        int lateMins = 0;
+        boolean notEnough = true;
+        double missing = STANDARD_WORK_HOURS;
+        WorkLocation loc = WorkLocation.OFFICE;
+        AttendanceStatus status = AttendanceStatus.ABSENT;
+        AttendanceType type = AttendanceType.ABSENCE;
+
+        if (in != null) {
+            if (out != null) {
+                long totalMinutes = duration(in, out);
+                if (overlapsLunch(in.toLocalTime(), out.toLocalTime())) {
+                    totalMinutes = Math.max(0, totalMinutes - LUNCH_MINUTES);
+                    workHours = Math.round((totalMinutes / 60.0) * 100.0) / 100.0;
+                }
+            }
+
+            // Late logic
+            LocalDateTime shiftStart = date.atTime(SHIFT_START);
+            lateMins = (in.isAfter(shiftStart)) ? (int) duration(shiftStart, in) : 0;
+            isLate = lateMins > 0;
+
+            // Missing / not enough
+            missing = Math.round(Math.max(0.0, STANDARD_WORK_HOURS - workHours) * 100.0) / 100.0;;
+            notEnough = workHours < STANDARD_WORK_HOURS;
+
+            loc = WorkLocation.OFFICE;
+
+            if (isLate) status = AttendanceStatus.LATE_ARRIVAL;
+            else status = AttendanceStatus.WORK_FROM_OFFICE;
+
+            if (workHours >= STANDARD_WORK_HOURS) {
+                type = (workHours > STANDARD_WORK_HOURS) ? AttendanceType.OVERTIME : AttendanceType.FULL_DAY;
+            } else if (workHours >= 4.0) {
+                type = AttendanceType.HALF_DAY;
+            } else {
+                status = AttendanceStatus.ABSENT;
+            }
+
+            r.setWorkHours(workHours);
+            r.setIsLate(isLate);
+            r.setLateMinutes(lateMins);
+            r.setNotEnoughHours(notEnough);
+            r.setMissingHours(missing);
+            r.setWorkLocation(loc);
+            r.setStatus(status);
+            r.setType(type);
+
+            attendanceRepository.save(r);
+        }
     }
 
-    // Format số giờ thành "10h 2m"
-    private String formatWorkHours(Double hours) {
-        if (hours == null || hours == 0) return "0m";
-
-        int hourPart = hours.intValue();
-        int minutePart = (int) ((hours - hourPart) * 60);
-
-        if (minutePart == 0) return hourPart + "h";
-
-        return hourPart + "h " + minutePart + "m";
+    private boolean overlapsLunch(LocalTime start, LocalTime end) {
+        if (start == null || end == null) return false;
+        if (end.isBefore(start)) return false;
+        // Typical lunch window 12:00–13:00
+        LocalTime LUNCH_START = LocalTime.NOON;
+        LocalTime LUNCH_END   = LocalTime.NOON.plusHours(1);
+        return !(end.isBefore(LUNCH_START) || start.isAfter(LUNCH_END));
     }
 
-    private List<AttendanceRecordDTO> mapToDTO(List<AttendanceRecord> records) {
-        return records.stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+    private final EnumSet<AttendanceStatus> PRESENT_STATUSES = EnumSet.of(
+            AttendanceStatus.PRESENT,
+            AttendanceStatus.WORK_FROM_OFFICE,
+            AttendanceStatus.WORK_FROM_HOME
+    );
+
+    private record Metrics(int totalDays, int presentDays, int lateDays, int absentDays, double avgHours) {
     }
 
-    private AttendanceRecordDTO mapToDTO(AttendanceRecord record) {
-        LocalTime checkIn = record.getCheckIn() != null ?
-                record.getCheckIn().toLocalTime() : null;
-        LocalTime checkOut = record.getCheckOut() != null ?
-                record.getCheckOut().toLocalTime() : null;
+    private Metrics computeMetrics(List<AttendanceRecord> records) {
+        int totalDays = records.size();
 
-        String workHoursFormatted = formatWorkHours(record.getWorkHours());
+        int presentDays = (int) records.stream()
+                .filter(r -> PRESENT_STATUSES.contains(r.getStatus()))
+                .count();
 
-        String dayOfWeek = getDayOfWeekInEnglish(record.getDate());
+        int lateDays = (int) records.stream()
+                .filter(r -> Boolean.TRUE.equals(r.getIsLate()))
+                .count();
 
-        // Kiểm tra có đủ giờ không
-        boolean notEnoughHour = record.getWorkHours() != null &&
-                record.getWorkHours() < STANDARD_WORK_HOURS;
+        int absentDays = (int) records.stream()
+                .filter(r -> r.getStatus() == AttendanceStatus.ABSENT)
+                .count();
 
-        return AttendanceRecordDTO.builder()
-                .date(record.getDate())
-                .day(dayOfWeek)
-                .checkIn(checkIn)
-                .checkOut(checkOut)
-                .workHours(workHoursFormatted)
-                .status(record.getStatus())
-                .notEnoughHour(notEnoughHour)
-                .build();
+        double avgHours = records.stream()
+                .mapToDouble(r -> r.getWorkHours() != null ? r.getWorkHours() : 0.0)
+                .average()
+                .orElse(0.0);
+
+        return new Metrics(totalDays, presentDays, lateDays, absentDays, avgHours);
     }
 
-
-
-//
-//    // History of all employees by arbitrary period
-//    @Transactional(readOnly = true)
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public AttendanceHistoryResponse getAllEmployeesHistoryBetween(LocalDate start, LocalDate end) {
-//        List<AttendanceRecord> records =
-//                attendanceRepository.findAllWithPersonnelByDateBetween(start, end);
-//
-//        // Optionally: sort by (date asc, code asc)
-//        records.sort(Comparator
-//                .comparing(AttendanceRecord::getDate)
-//                .thenComparing(r -> r.getPersonnel().getCode()));
-//
-//        List<AttendanceRecordResponse> payload = records.stream()
-//                .map(attendanceMapper::toAttendanceRecordResponse)
-//                .toList();
-//
-//        return AttendanceHistoryResponse.builder()
-//                .start(start)
-//                .end(end)
-//                .records(payload)
-//                .build();
-//    }
 }
 
