@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 
 import com._6.ems.dto.response.*;
 import com._6.ems.entity.Personnel;
-import com._6.ems.entity.Salary;
 import com._6.ems.enums.AttendanceStatus;
 import com._6.ems.enums.AttendanceType;
 import com._6.ems.exception.AppException;
@@ -19,11 +18,12 @@ import com._6.ems.exception.ErrorCode;
 import com._6.ems.mapper.AttendanceMapper;
 import com._6.ems.repository.PersonnelRepository;
 import com._6.ems.repository.SalaryRepository;
-import com._6.ems.utils.SecurityUtil;
+import com._6.ems.utils.PersonnelUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -37,85 +37,79 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class AttendanceService {
 
-    private static final double STANDARD_WORK_HOURS = 8.0;
+    @Value("${salary.standard-work-hours}")
+    private static double standardWorkHours;
+
     private static final LocalTime SHIFT_START = LocalTime.of(9, 0);
-    private static final int LUNCH_MINUTES = 60;
 
     AttendanceRepository attendanceRepository;
     PersonnelRepository personnelRepository;
     AttendanceMapper attendanceMapper;
     SalaryRepository salaryRepository;
     SalaryService salaryService;
+    PersonnelUtil personnelUtil;
 
     @Transactional
     public AttendanceRecordResponse checkIn() {
-        String code = SecurityUtil.getCurrentUserCode();
-
-        Personnel personnel = personnelRepository.findById(code)
-                .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
+        Personnel personnel = personnelUtil.getCurrentPersonnel();
 
         LocalDate today = LocalDate.now();
 
-        AttendanceRecord record = attendanceRepository.findByPersonnel_CodeAndDateForUpdate(code, today)
+        AttendanceRecord attendanceRecord = attendanceRepository
+                .findByPersonnel_CodeAndDateForUpdate(personnel.getCode(), today)
                 .orElseGet(() -> AttendanceRecord.builder()
                         .personnel(personnel)
                         .date(today)
                         .status(AttendanceStatus.PRESENT)
                         .build());
 
-        if (record.getCheckIn() != null) throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKIN);
+        if (attendanceRecord.getCheckIn() != null) throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKIN);
 
-        record.setCheckIn(LocalDateTime.now());
-        checkLate(record);
+        attendanceRecord.setCheckIn(LocalDateTime.now());
 
-        return attendanceMapper.toAttendanceRecordResponse(attendanceRepository.save(record));
+        if(LocalTime.now().isAfter(SHIFT_START)) {
+            attendanceRecord.setStatus(AttendanceStatus.LATE_ARRIVAL);
+        }
+
+        checkLate(attendanceRecord);
+
+        boolean exists = salaryRepository
+                .existsByPersonnelAndMonthAndYear(personnel, today.getMonthValue(), today.getYear());
+        if (!exists) {
+            salaryService.createMonthlySalary(personnel);
+        }
+
+        return attendanceMapper.toAttendanceRecordResponse(attendanceRepository.save(attendanceRecord));
     }
 
     @Transactional
     public AttendanceRecordResponse checkOut() {
-        String code = SecurityUtil.getCurrentUserCode();
+        Personnel personnel = personnelUtil.getCurrentPersonnel();
 
-        personnelRepository.findById(code)
-                .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
-
-        LocalDate today = LocalDate.now();
-
-        AttendanceRecord record = attendanceRepository.findOpenForUpdate(code)
+        AttendanceRecord attendanceRecord = attendanceRepository.findOpenForUpdate(personnel.getCode())
                 .orElseThrow(() -> new AppException(ErrorCode.ATTENDANCE_NOT_CHECKIN));
 
-        if (record.getCheckOut() != null) throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKOUT);
+        if (attendanceRecord.getCheckOut() != null) throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKOUT);
 
-        record.setCheckOut(LocalDateTime.now());
-        calculateWorkHours(record);
-        classify(record);
+        attendanceRecord.setCheckOut(LocalDateTime.now());
+        calculateWorkHours(attendanceRecord);
+        classify(attendanceRecord);
 
-        int month = today.getMonthValue();
-        int year = today.getYear();
+        salaryService.calculateSalary(personnel);
 
-        Salary salary = salaryRepository
-                .findByOwner_CodeAndMonthAndYear(code, month, year)
-                .orElseGet(() -> salaryService.createSalary(code, month, year));
+        attendanceRepository.save(attendanceRecord);
 
-        switch (record.getType()) {
-            case FULL_DAY -> salary.setFullWork(salary.getFullWork() + 1);
-            case HALF_DAY -> salary.setHalfWork(salary.getHalfWork() + 1);
-            default       -> salary.setAbsence(salary.getAbsence() + 1);
-        }
-
-        attendanceRepository.save(record);
-        salaryRepository.save(salary);
-
-        return attendanceMapper.toAttendanceRecordResponse(record);
+        return attendanceMapper.toAttendanceRecordResponse(attendanceRecord);
     }
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN') or #employeeCode == authentication.name")
     public AttendanceRecordResponse getRecordByDate(String employeeCode, LocalDate date) {
-        AttendanceRecord record = attendanceRepository
+        AttendanceRecord attendanceRecord = attendanceRepository
                 .findByPersonnel_CodeAndDate(employeeCode, date)
                 .orElseThrow(() -> new AppException(ErrorCode.ATTENDANCE_RECORD_NOT_FOUND));
 
-        return attendanceMapper.toAttendanceRecordResponse(record);
+        return attendanceMapper.toAttendanceRecordResponse(attendanceRecord);
     }
 
     @Transactional(readOnly = true)
@@ -126,7 +120,7 @@ public class AttendanceService {
         return records.stream()
                 .map(attendanceMapper::toAttendanceRecordResponse)
                 .sorted(Comparator.comparing(AttendanceRecordResponse::getEmployee_code))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -194,9 +188,7 @@ public class AttendanceService {
         // Tính toán các chỉ số
         int totalDays = records.size();
         int presentDays = (int) records.stream()
-                .filter(r -> r.getStatus() == AttendanceStatus.PRESENT ||
-                        r.getStatus() == AttendanceStatus.WORK_FROM_OFFICE ||
-                        r.getStatus() == AttendanceStatus.WORK_FROM_HOME)
+                .filter(r -> r.getStatus() == AttendanceStatus.PRESENT)
                 .count();
         int lateDays = (int) records.stream()
                 .filter(r -> Boolean.TRUE.equals(r.getIsLate()))
@@ -221,8 +213,6 @@ public class AttendanceService {
                 .build();
     }
 
-
-
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN')")
     public List<AttendanceMonthlySummary> getMonthlySummary(int month, int year) {
@@ -242,8 +232,6 @@ public class AttendanceService {
 
                     int presentDays = (int) attendances.stream().filter(r ->
                             r.getStatus() == AttendanceStatus.PRESENT
-                                    || r.getStatus() == AttendanceStatus.WORK_FROM_OFFICE
-                                    || r.getStatus() == AttendanceStatus.WORK_FROM_HOME
                     ).count();
 
                     int lateDays = (int) attendances.stream().filter(r -> Boolean.TRUE.equals(r.getIsLate())).count();
@@ -276,9 +264,6 @@ public class AttendanceService {
 
 
     /* Helper methods */
-    private int duration(LocalDateTime start, LocalDateTime end) {
-        return (int) Duration.between(start, end).toMinutes();
-    }
 
     private void checkLate(AttendanceRecord record) {
         if (record.getCheckIn() == null) return;
@@ -292,9 +277,10 @@ public class AttendanceService {
 
     private void classify(AttendanceRecord record) {
         double hrs = record.getWorkHours() == null ? 0.0 : record.getWorkHours();
-        if (hrs >= 8.0) record.setType(AttendanceType.FULL_DAY);
+        if (hrs > 9.0) record.setType(AttendanceType.OVERTIME);
+        else if (hrs >= 8.0) record.setType(AttendanceType.FULL_DAY);
         else if (hrs >= 4.0) record.setType(AttendanceType.HALF_DAY);
-        else record.setType(AttendanceType.ABSENCE);
+        else record.setType(AttendanceType.NOT_ENOUGH_HOURS);
     }
 
     // Tính work hours từ check-in và check-out
@@ -305,17 +291,17 @@ public class AttendanceService {
                     record.getCheckOut()
             );
 
-            // Trừ 1 giờ nghỉ trưa
-            long totalMinutes = duration.toMinutes() - 60;
-            double hours = totalMinutes / 60.0;
+            double hours = duration.toMinutes() / 60.0;
 
             record.setWorkHours(Math.round(hours * 100.0) / 100.0);
 
             // Kiểm tra không đủ giờ
-            record.setNotEnoughHours(hours < STANDARD_WORK_HOURS);
+            record.setNotEnoughHours(hours < standardWorkHours);
 
-            if (hours < STANDARD_WORK_HOURS) {
-                record.setMissingHours(STANDARD_WORK_HOURS - hours);
+            if (hours < standardWorkHours) {
+                record.setMissingHours(standardWorkHours - hours);
+            } else {
+                record.setMissingHours(0.0);
             }
         }
     }
@@ -345,7 +331,7 @@ public class AttendanceService {
     private List<AttendanceRecordDTO> mapToDTO(List<AttendanceRecord> records) {
         return records.stream()
                 .map(this::mapToDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private AttendanceRecordDTO mapToDTO(AttendanceRecord record) {
@@ -360,7 +346,7 @@ public class AttendanceService {
 
         // Kiểm tra có đủ giờ không
         boolean notEnoughHour = record.getWorkHours() != null &&
-                record.getWorkHours() < STANDARD_WORK_HOURS;
+                record.getWorkHours() < standardWorkHours;
 
         return AttendanceRecordDTO.builder()
                 .date(record.getDate())

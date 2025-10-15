@@ -1,5 +1,6 @@
 package com._6.ems.repository;
 
+import com._6.ems.entity.Personnel;
 import com._6.ems.enums.AttendanceType;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,6 +18,10 @@ import java.util.List;
 
 @Repository
 public interface AttendanceRepository extends JpaRepository<AttendanceRecord, String> {
+
+    boolean existsByPersonnelAndDate(Personnel personnel, LocalDate date);
+
+    List<AttendanceRecord> findByDateAndCheckOutIsNull(LocalDate date);
 
     /* ========= BASIC LOOKUPS ========= */
     // Non-locking read (just need to check today’s row exists)

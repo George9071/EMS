@@ -39,6 +39,8 @@ public class PersonnelCreationRequest {
     String description;
     String skills;
     String position;
+    Double basicSalary;
+
 
     @Valid
     AccountCreationRequest accountCreationRequest;

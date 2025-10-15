@@ -58,6 +58,7 @@ public enum ErrorCode {
     ACCOUNT_NOT_FOUND(404, "Account not found", HttpStatus.NOT_FOUND),
     NO_RECIPIENT_FOUND(404, "No recipient found", HttpStatus.NOT_FOUND),
     ONLY_ADMIN_CAN_SEND_GLOBAL_NOTIFICATION(405, "Only admin can send global notification", HttpStatus.CONFLICT),
+    SALARY_NOT_FOUND(404, "Salary not found", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

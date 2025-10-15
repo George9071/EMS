@@ -1,9 +1,15 @@
 package com._6.ems.repository;
 
-import java.util.List;
+import java.time.YearMonth;
 import java.util.Optional;
 
+import com._6.ems.dto.request.SalaryStatisticsProjection;
+import com._6.ems.entity.Personnel;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com._6.ems.entity.Salary;
@@ -11,12 +17,38 @@ import com._6.ems.entity.Salary;
 @Repository
 public interface SalaryRepository extends JpaRepository<Salary, String> {
 
-    // Find all salary records by personnel code (owner code)
-    List<Salary> findByOwner_Code(String personnelCode);
+    Optional<Salary> findByPersonnelAndMonthAndYear(Personnel personnel, Integer month, Integer year);
 
-    // Find salary record for specific personnel by month and year
-    Optional<Salary> findByOwner_CodeAndMonthAndYear(String personnelCode, int month, int year);
+    boolean existsByPersonnelAndMonthAndYear(Personnel personnel, Integer month, Integer year);
 
-    // Find all salary records for a given month and year (all personnel)
-    List<Salary> findByMonthAndYear(int month, int year);
+    // Tìm bảng lương theo mã nhân viên
+    Page<Salary> findByPersonnelCodeOrderByYearDescMonthDesc(String personnelCode, Pageable pageable);
+
+
+    // Tìm bảng lương của nhân viên trong tháng/năm cụ thể
+    Optional<Salary> findByPersonnelCodeAndMonthAndYear(String personnelCode, Integer month, Integer year);
+
+    // Kiểm tra xem bảng lương đã tồn tại chưa
+    boolean existsByPersonnelCodeAndMonthAndYear(String personnelCode, Integer month, Integer year);
+
+    // Lấy danh sách bảng lương trong khoảng thời gian
+    @Query("SELECT s FROM Salary s WHERE " +
+            "(s.year > :fromYear OR (s.year = :fromYear AND s.month >= :fromMonth)) AND " +
+            "(s.year < :toYear OR (s.year = :toYear AND s.month <= :toMonth)) " +
+            "ORDER BY s.year DESC, s.month DESC")
+    Page<Salary> findByPeriod(@Param("fromMonth") Integer fromMonth,
+                              @Param("fromYear") Integer fromYear,
+                              @Param("toMonth") Integer toMonth,
+                              @Param("toYear") Integer toYear,
+                              Pageable pageable);
+
+    // Thống kê tổng lương theo tháng/năm
+    @Query("SELECT " +
+            "COUNT(s) as totalEmployees, " +
+            "SUM(s.grossSalary) as totalGross, " +
+            "SUM(s.netSalary) as totalNet, " +
+            "SUM(s.totalDeductions) as totalDeductions, " +
+            "AVG(s.netSalary) as avgNetSalary " +
+            "FROM Salary s WHERE s.month = :month AND s.year = :year")
+    SalaryStatisticsProjection getStatistics(@Param("month") Integer month, @Param("year") Integer year);
 }

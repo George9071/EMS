@@ -22,9 +22,13 @@ public class PersonnelUtil {
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
 
-    public PersonnelInfor getPersonnelInforByCode(String code) {
-        Personnel personnel = personnelRepository.findByCode(code)
+    public Personnel getCurrentPersonnel() {
+        return personnelRepository.findByCode(SecurityUtil.getCurrentUserCode())
                 .orElseThrow(() -> new AppException(ErrorCode.PERSONNEL_NOT_FOUND));
+    }
+
+    public PersonnelInfor getPersonnelInforByCode(String code) {
+        Personnel personnel = getCurrentPersonnel();
 
         String fullName = personnel.getLastName() + " " + personnel.getFirstName();
 
@@ -36,6 +40,8 @@ public class PersonnelUtil {
                 .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
         String departmentName = department.getName();
 
+        String position = personnel.getPosition();
+
         return new PersonnelInfor(
                 fullName,
                 dateOfBirth,
@@ -43,7 +49,8 @@ public class PersonnelUtil {
                 personnel.getPhoneNumber(),
                 personnel.getCity(),
                 personnel.getStreet(),
-                departmentName
+                departmentName,
+                position
         );
     }
 }

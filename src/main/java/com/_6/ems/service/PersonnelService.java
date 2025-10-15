@@ -2,6 +2,7 @@ package com._6.ems.service;
 
 import com._6.ems.dto.request.PersonnelCreationRequest;
 import com._6.ems.dto.request.PersonnelUpdateRequest;
+import com._6.ems.dto.request.UpdateSalaryRequest;
 import com._6.ems.dto.response.NotiResponse;
 import com._6.ems.dto.response.PersonnelResponse;
 import com._6.ems.dto.response.PrivilegeResponse;
@@ -46,8 +47,9 @@ public class PersonnelService {
     EmployeeRepository employeeRepository;
     PrivilegeMapper privilegeMapper;
     ManagerRepository managerRepository;
-    private final TaskMapper taskMapper;
-    private final DepartmentRepository departmentRepository;
+    TaskMapper taskMapper;
+    DepartmentRepository departmentRepository;
+    SalaryService salaryService;
 
     @Transactional
     public PersonnelResponse createPersonnel(PersonnelCreationRequest request) {
@@ -76,6 +78,8 @@ public class PersonnelService {
                             .build()
             );
         }
+
+        salaryService.createMonthlySalary(personnel);
 
         return toPersonnelResponse(personnel);
     }
@@ -215,6 +219,32 @@ public class PersonnelService {
                 .toList();
     }
 
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('AUTHORIZE_ADMIN')")
+    public PersonnelResponse updateBasicSalary(String code, UpdateSalaryRequest request) {
+        Personnel personnel = personnelRepository.findByCode(code)
+                .orElseThrow(() -> new AppException(ErrorCode.PERSONNEL_NOT_FOUND));
+
+        if(request.getBasicSalary() != null) {
+            personnel.setBasicSalary(request.getBasicSalary());
+        }
+        if(request.getBonus() != null) {
+            personnel.setBonus(request.getBonus());
+        }
+        if(request.getAllowance() != null) {
+            personnel.setAllowance(request.getAllowance());
+        }
+        if(request.getKpiPenalty() != null) {
+            personnel.setKpiPenalty(request.getKpiPenalty());
+        }
+
+        personnel = personnelRepository.save(personnel);
+
+        salaryService.calculateSalary(personnel);
+
+        return toPersonnelResponse(personnel);
+    }
+
     public PersonnelResponse getPersonnelByCode(String code) {
         Personnel personnel = personnelRepository.findById(code)
                 .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
@@ -256,6 +286,7 @@ public class PersonnelService {
                 .position(personnel.getPosition())
                 .accountId(personnel.getAccount() != null ? personnel.getAccount().getId() : null)
                 .role(personnel.getAccount() != null ? personnel.getAccount().getRole().name() : null)
+                .basicSalary(personnel.getBasicSalary())
                 .build();
 
         Set<PrivilegeResponse> privilegeResponses = personnel.getPrivileges() != null
@@ -265,31 +296,45 @@ public class PersonnelService {
                 : Collections.emptySet();
         response.setPrivileges(privilegeResponses);
 
-        Role role = personnel.getAccount() != null ? personnel.getAccount().getRole() : null;
-
-        if (role == Role.EMPLOYEE) {
-            Employee employee = employeeRepository.findById(personnel.getCode()).orElse(null);
-            if (employee != null) {
-                response.setDepartmentName(
-                        employee.getDepartment() != null ? employee.getDepartment().getName() : null
-                );
-                response.setTasks(employee.getTasks() != null ? employee.getTasks().stream().map(taskMapper::toTaskResponse).toList() : Collections.emptyList());
-            }
-
-        } else if (role == Role.MANAGER) {
-            Manager manager = managerRepository.findById(personnel.getCode()).orElse(null);
-            if (manager != null) {
-                response.setDepartmentName(
-                        manager.getDepartment() != null ? manager.getDepartment().getName() : null
-                );
-                response.setTasks(Collections.emptyList());
-            }
-
-        } else if (role == Role.ADMIN) {
-            response.setDepartmentName("Administration");
-            response.setTasks(Collections.emptyList());
-        }
+        setDepartmentNameAndTasks(personnel, response);
 
         return response;
+    }
+
+    private void setDepartmentNameAndTasks(Personnel personnel, PersonnelResponse response) {
+        Role role = (personnel.getAccount() != null) ? personnel.getAccount().getRole() : null;
+        if (role == null) return;
+
+        switch (role) {
+            case EMPLOYEE -> handleEmployee(personnel, response);
+            case MANAGER -> handleManager(personnel, response);
+            case ADMIN -> handleAdmin(response);
+            default -> { /* do nothing */ }
+        }
+    }
+
+    private void handleEmployee(Personnel personnel, PersonnelResponse response) {
+        employeeRepository.findById(personnel.getCode()).ifPresent(employee -> {
+            response.setDepartmentName(getDepartmentName(employee.getDepartment()));
+            response.setTasks(employee.getTasks() != null
+                    ? employee.getTasks().stream().map(taskMapper::toTaskResponse).toList()
+                    : Collections.emptyList());
+        });
+    }
+
+    private void handleManager(Personnel personnel, PersonnelResponse response) {
+        managerRepository.findById(personnel.getCode()).ifPresent(manager -> {
+            response.setDepartmentName(getDepartmentName(manager.getDepartment()));
+            response.setTasks(Collections.emptyList());
+        });
+    }
+
+    private void handleAdmin(PersonnelResponse response) {
+        response.setDepartmentName("Administration");
+        response.setTasks(Collections.emptyList());
+    }
+
+    private String getDepartmentName(Department department) {
+        return department != null ? department.getName() : null;
     }
 }

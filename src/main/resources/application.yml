@@ -51,10 +51,9 @@ swagger:
   host-url: http://localhost:8080/ems
 
 salary:
-  full:
-    employee: 100
-    manager: 175
-  half:
-    employee: 70
-    manager: 120
-  absence: 30
+  employee:
+    position-allowance: 3000000.0
+  manager:
+    position-allowance: 5000000.0
+  standard-work-hours: 8.0
+  overtimeRate: 1.5
