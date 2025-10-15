@@ -129,9 +129,29 @@ public class SalaryService {
     }
 
     @Transactional(readOnly = true)
-    public Page<SalaryResponse> getSalariesByPersonnelCode(String personnelCode, Pageable pageable) {
-        return salaryRepository.findByPersonnelCodeOrderByYearDescMonthDesc(personnelCode, pageable)
-                .map(salaryMapper::toResponse);
+    public Page<SalaryResponse> getSalariesByPersonnelCode(String personnelCode, Integer month, Integer year, Pageable pageable) {
+        Page<Salary> page;
+
+        if (month != null && year != null) {
+            page = salaryRepository.findByPersonnelCodeAndMonthAndYearOrderByYearDescMonthDesc(personnelCode, month, year, pageable);
+        } else {
+            page = salaryRepository.findByPersonnelCodeOrderByYearDescMonthDesc(personnelCode, pageable);
+        }
+
+        return page.map(salaryMapper::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<SalaryResponse> getAllSalaries(Integer month, Integer year, Pageable pageable) {
+        Page<Salary> page;
+
+        if (month != null && year != null) {
+            page = salaryRepository.findByMonthAndYearOrderByYearDescMonthDesc(month, year, pageable);
+        } else {
+            page = salaryRepository.findAllByOrderByYearDescMonthDesc(pageable);
+        }
+
+        return page.map(salaryMapper::toResponse);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

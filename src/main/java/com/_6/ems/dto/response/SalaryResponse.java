@@ -17,4 +17,5 @@ public class SalaryResponse {
     private Double grossSalary;
     private Double netSalary;
     private Double totalDeductions;
+    private SalaryDetailResponse salaryDetailResponse;
 }

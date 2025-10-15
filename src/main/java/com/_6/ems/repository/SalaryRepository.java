@@ -21,17 +21,8 @@ public interface SalaryRepository extends JpaRepository<Salary, String> {
 
     boolean existsByPersonnelAndMonthAndYear(Personnel personnel, Integer month, Integer year);
 
-    // Tìm bảng lương theo mã nhân viên
     Page<Salary> findByPersonnelCodeOrderByYearDescMonthDesc(String personnelCode, Pageable pageable);
 
-
-    // Tìm bảng lương của nhân viên trong tháng/năm cụ thể
-    Optional<Salary> findByPersonnelCodeAndMonthAndYear(String personnelCode, Integer month, Integer year);
-
-    // Kiểm tra xem bảng lương đã tồn tại chưa
-    boolean existsByPersonnelCodeAndMonthAndYear(String personnelCode, Integer month, Integer year);
-
-    // Lấy danh sách bảng lương trong khoảng thời gian
     @Query("SELECT s FROM Salary s WHERE " +
             "(s.year > :fromYear OR (s.year = :fromYear AND s.month >= :fromMonth)) AND " +
             "(s.year < :toYear OR (s.year = :toYear AND s.month <= :toMonth)) " +
@@ -51,4 +42,12 @@ public interface SalaryRepository extends JpaRepository<Salary, String> {
             "AVG(s.netSalary) as avgNetSalary " +
             "FROM Salary s WHERE s.month = :month AND s.year = :year")
     SalaryStatisticsProjection getStatistics(@Param("month") Integer month, @Param("year") Integer year);
+
+    Page<Salary> findByPersonnelCodeAndMonthAndYearOrderByYearDescMonthDesc(
+            String personnelCode, Integer month, Integer year, Pageable pageable
+    );
+
+    Page<Salary> findAllByOrderByYearDescMonthDesc(Pageable pageable);
+
+    Page<Salary> findByMonthAndYearOrderByYearDescMonthDesc(Integer month, Integer year, Pageable pageable);
 }

@@ -12,6 +12,7 @@ public interface SalaryMapper {
 
     @Mapping(source = "personnel.code", target = "personnelCode")
     @Mapping(target = "personnelName", expression = "java(getFullName(salary.getPersonnel()))")
+    @Mapping(target = "salaryDetailResponse", expression = "java(toDetailResponse(salary))")
     SalaryResponse toResponse(Salary salary);
 
     @Mapping(source = "personnel.code", target = "personnelCode")
