@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 
 import com._6.ems.dto.response.*;
 import com._6.ems.entity.Personnel;
-import com._6.ems.entity.Salary;
 import com._6.ems.enums.AttendanceStatus;
 import com._6.ems.enums.AttendanceType;
 import com._6.ems.enums.WorkLocation;
@@ -18,11 +17,12 @@ import com._6.ems.exception.ErrorCode;
 import com._6.ems.mapper.AttendanceMapper;
 import com._6.ems.repository.PersonnelRepository;
 import com._6.ems.repository.SalaryRepository;
-import com._6.ems.utils.SecurityUtil;
+import com._6.ems.utils.PersonnelUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +36,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class AttendanceService {
 
-    private static final double STANDARD_WORK_HOURS = 8.0;
+    @Value("${salary.standard-work-hours}")
+    private static double standardWorkHours;
+
     private static final LocalTime SHIFT_START = LocalTime.of(9, 0);
     private static final LocalTime SHIFT_END = LocalTime.of(18, 0);
     private static final int LUNCH_MINUTES = 60;
@@ -46,107 +48,69 @@ public class AttendanceService {
     AttendanceMapper attendanceMapper;
     SalaryRepository salaryRepository;
     SalaryService salaryService;
+    PersonnelUtil personnelUtil;
 
     @Transactional
     public AttendanceRecordResponse checkIn() {
-        String code = SecurityUtil.getCurrentUserCode();
-
-        Personnel personnel = personnelRepository.findById(code)
-                .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
+        Personnel personnel = personnelUtil.getCurrentPersonnel();
 
         LocalDate today = LocalDate.now();
 
-        // If there is an open record (no checkout) — lock it
-        Optional<AttendanceRecord> openOpt = attendanceRepository.findOpenForUpdate(code);
-        if (openOpt.isPresent()) {
-            AttendanceRecord open = openOpt.get();
-            if (open.getDate().isEqual(today))
-                throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKIN);
+        AttendanceRecord attendanceRecord = attendanceRepository
+                .findByPersonnel_CodeAndDateForUpdate(personnel.getCode(), today)
+                .orElseGet(() -> AttendanceRecord.builder()
+                        .personnel(personnel)
+                        .date(today)
+                        .status(AttendanceStatus.PRESENT)
+                        .build());
 
-            open.setCheckOut(open.getCheckIn());
-            open.setType(AttendanceType.ABSENCE);
-            calculateWorkHours(open);
+        if (attendanceRecord.getCheckIn() != null) throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKIN);
 
-            int month = open.getDate().getMonthValue();
-            int year  = open.getDate().getYear();
+        attendanceRecord.setCheckIn(LocalDateTime.now());
 
-            Salary salary = salaryRepository.findByOwner_CodeAndMonthAndYear(code, month, year)
-                    .orElseGet(() -> {
-                        try {
-                            return salaryService.createSalary(code, month, year);
-                        } catch (org.springframework.dao.DataIntegrityViolationException e) {
-                            return salaryRepository.findByOwner_CodeAndMonthAndYear(code, month, year).orElseThrow();
-                        }
-                    });
-
-            salary.setAbsence(salary.getAbsence() + 1);
-            attendanceRepository.save(open);
-            salaryRepository.save(salary);
+        if(LocalTime.now().isAfter(SHIFT_START)) {
+            attendanceRecord.setStatus(AttendanceStatus.LATE_ARRIVAL);
         }
 
-        AttendanceRecord record = attendanceRepository
-                .findByPersonnel_CodeAndDateForUpdate(code, today)
-                .orElseGet(() -> attendanceRepository.save(
-                        AttendanceRecord.builder()
-                                .personnel(personnel)
-                                .date(today)
-                                .status(AttendanceStatus.PRESENT)
-                                .build()
-                ));
+        checkLate(attendanceRecord);
 
-        if (record.getCheckIn() != null) throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKIN);
+        boolean exists = salaryRepository
+                .existsByPersonnelAndMonthAndYear(personnel, today.getMonthValue(), today.getYear());
+        if (!exists) {
+            salaryService.createMonthlySalary(personnel);
+        }
 
-        record.setCheckIn(LocalDateTime.now());
-        checkLate(record);
-
-        return attendanceMapper.toAttendanceRecordResponse(attendanceRepository.save(record));
+        return attendanceMapper.toAttendanceRecordResponse(attendanceRepository.save(attendanceRecord));
     }
 
     @Transactional
     public AttendanceRecordResponse checkOut() {
-        String code = SecurityUtil.getCurrentUserCode();
+        Personnel personnel = personnelUtil.getCurrentPersonnel();
 
-        personnelRepository.findById(code)
-                .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
-
-        LocalDate today = LocalDate.now();
-
-        AttendanceRecord record = attendanceRepository.findOpenForUpdate(code)
+        AttendanceRecord attendanceRecord = attendanceRepository.findOpenForUpdate(personnel.getCode())
                 .orElseThrow(() -> new AppException(ErrorCode.ATTENDANCE_NOT_CHECKIN));
 
-        if (record.getCheckOut() != null) throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKOUT);
+        if (attendanceRecord.getCheckOut() != null) throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKOUT);
 
-        record.setCheckOut(LocalDateTime.now());
-        calculateWorkHours(record);
-        classify(record);
+        attendanceRecord.setCheckOut(LocalDateTime.now());
+        calculateWorkHours(attendanceRecord);
+        classify(attendanceRecord);
 
-        int month = today.getMonthValue();
-        int year = today.getYear();
+        salaryService.calculateSalary(personnel);
 
-        Salary salary = salaryRepository
-                .findByOwner_CodeAndMonthAndYear(code, month, year)
-                .orElseGet(() -> salaryService.createSalary(code, month, year));
+        attendanceRepository.save(attendanceRecord);
 
-        switch (record.getType()) {
-            case FULL_DAY -> salary.setFullWork(salary.getFullWork() + 1);
-            case HALF_DAY -> salary.setHalfWork(salary.getHalfWork() + 1);
-            default       -> salary.setAbsence(salary.getAbsence() + 1);
-        }
-
-        attendanceRepository.save(record);
-        salaryRepository.save(salary);
-
-        return attendanceMapper.toAttendanceRecordResponse(record);
+        return attendanceMapper.toAttendanceRecordResponse(attendanceRecord);
     }
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN') or #employeeCode == authentication.name")
     public AttendanceRecordResponse getRecordByDate(String employeeCode, LocalDate date) {
-        AttendanceRecord record = attendanceRepository
+        AttendanceRecord attendanceRecord = attendanceRepository
                 .findByPersonnel_CodeAndDate(employeeCode, date)
                 .orElseThrow(() -> new AppException(ErrorCode.ATTENDANCE_RECORD_NOT_FOUND));
 
-        return attendanceMapper.toAttendanceRecordResponse(record);
+        return attendanceMapper.toAttendanceRecordResponse(attendanceRecord);
     }
 
     @Transactional(readOnly = true)
@@ -157,7 +121,7 @@ public class AttendanceService {
         return records.stream()
                 .map(attendanceMapper::toAttendanceRecordResponse)
                 .sorted(Comparator.comparing(AttendanceRecordResponse::getEmployee_code))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -304,10 +268,11 @@ public class AttendanceService {
 
     // Classify type of record (FULLDAY | HALFDAY | ABSENCE | OVERTIME | UNKNOWN)
     private void classify(AttendanceRecord record) {
-        double duration = record.getWorkHours() == null ? 0.0 : record.getWorkHours();
-        if (duration >= 8.0) record.setType(AttendanceType.FULL_DAY);
-        else if (duration >= 4.0) record.setType(AttendanceType.HALF_DAY);
-        else record.setType(AttendanceType.ABSENCE);
+        double hrs = record.getWorkHours() == null ? 0.0 : record.getWorkHours();
+        if (hrs > 9.0) record.setType(AttendanceType.OVERTIME);
+        else if (hrs >= 8.0) record.setType(AttendanceType.FULL_DAY);
+        else if (hrs >= 4.0) record.setType(AttendanceType.HALF_DAY);
+        else record.setType(AttendanceType.NOT_ENOUGH_HOURS);
     }
 
     // Calculate work hours from duration(check-in,check-out)
@@ -326,8 +291,10 @@ public class AttendanceService {
             // Check if not enough standard work hours
             record.setNotEnoughHours(hours < STANDARD_WORK_HOURS);
 
-            if (hours < STANDARD_WORK_HOURS) {
-                record.setMissingHours(STANDARD_WORK_HOURS - hours);
+            if (hours < standardWorkHours) {
+                record.setMissingHours(standardWorkHours - hours);
+            } else {
+                record.setMissingHours(0.0);
             }
         }
     }

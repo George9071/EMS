@@ -2,6 +2,7 @@ package com._6.ems.controller;
 
 import com._6.ems.dto.request.PersonnelCreationRequest;
 import com._6.ems.dto.request.PersonnelUpdateRequest;
+import com._6.ems.dto.request.UpdateSalaryRequest;
 import com._6.ems.dto.response.*;
 import com._6.ems.service.PersonnelService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -110,5 +112,18 @@ public class PersonnelController {
         return ApiResponse.<String>builder()
                 .result("Personnel has been deleted")
                 .build();
+    }
+
+    @PutMapping("/{code}/salary")
+    public ResponseEntity<ApiResponse<PersonnelResponse>> updateBasicSalary(
+            @PathVariable String code,
+            @RequestBody UpdateSalaryRequest request
+    ) {
+        PersonnelResponse response = personnelService.updateBasicSalary(code, request);
+        return ResponseEntity.ok().body(new ApiResponse<>(
+                200,
+                "Cập nhật lương cho nhân viên thành công",
+                response
+        ));
     }
 }

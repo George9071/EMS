@@ -9,14 +9,12 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class SalaryResponse {
-    String id;
-    String personnel_code;
-    int month;
-    int year;
-    int full_day;
-    int half_day;
-    int absence;
-    double bonus;
-    double penalty;
-    double real_pay;
+    private String id;
+    private String personnelCode;
+    private String personnelName;
+    private Integer month;
+    private Integer year;
+    private Double grossSalary;
+    private Double netSalary;
+    private Double totalDeductions;
 }

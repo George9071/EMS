@@ -30,6 +30,7 @@ public class PersonnelResponse {
     String accountId;
     String role;
     String departmentName;
+    Double basicSalary;
     List<TaskResponse> tasks;
     Set<PrivilegeResponse> privileges;
 }

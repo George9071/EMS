@@ -47,7 +47,7 @@ public class AttendanceRecord {
     LocalDateTime checkOut;
 
     @Column(name = "work_hours")
-    Double workHours;
+    Double workHours = 0.0;
 
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
@@ -57,35 +57,30 @@ public class AttendanceRecord {
     Boolean isLate;
 
     @Column(name = "late_minutes")
-    Integer lateMinutes;
+    Integer lateMinutes = 0;
 
     @Column(name = "not_enough_hours")
     Boolean notEnoughHours;
 
     @Column(name = "missing_hours")
-    Double missingHours;
+    Double missingHours = 0.0;
 
     @Column(name = "work_location")
     @Enumerated(EnumType.STRING)
-    WorkLocation workLocation;
+    WorkLocation workLocation = WorkLocation.OFFICE;
 
     @Column(name = "notes")
     String notes;
 
-    @Column(name = "created_at")
-    LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    @Override
+    public String toString() {
+        return "AttendanceRecord{" +
+                "id=" + id +
+                ", date=" + date +
+                ", type=" + type +
+                ", status=" + status +
+                ", workLocation=" + workLocation +
+                ", personnelCode=" + (personnel != null ? personnel.getCode() : null) +
+                '}';
     }
 }

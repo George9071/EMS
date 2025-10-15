@@ -61,6 +61,22 @@ public class Personnel {
     @Column(name = "gender")
     Gender gender;
 
+    @Column(name = "basic_salary", nullable = false)
+    @Builder.Default
+    private Double basicSalary = 0.0;
+
+    @Column(name = "kpi_penalty")
+    @Builder.Default
+    private Double kpiPenalty = 0.0;
+
+    @Column(name = "allowance")
+    @Builder.Default
+    private Double allowance = 0.0;
+
+    @Column(name = "bonus")
+    @Builder.Default
+    private Double bonus = 0.0;
+
     @OneToOne
     @JoinColumn(name = "account_id", referencedColumnName = "id")
     Account account;
@@ -69,7 +85,7 @@ public class Personnel {
     @Enumerated(EnumType.STRING)
     Set<Privilege> privileges;
 
-    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "personnel", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     List<Salary> salaryRecords = new ArrayList<>();
 
