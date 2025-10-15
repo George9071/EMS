@@ -11,7 +11,6 @@ import com._6.ems.dto.response.*;
 import com._6.ems.entity.Personnel;
 import com._6.ems.enums.AttendanceStatus;
 import com._6.ems.enums.AttendanceType;
-import com._6.ems.enums.WorkLocation;
 import com._6.ems.exception.AppException;
 import com._6.ems.exception.ErrorCode;
 import com._6.ems.mapper.AttendanceMapper;
@@ -239,22 +238,22 @@ public class AttendanceService {
 
     }
 
-    @Transactional
-    @PreAuthorize("hasRole('ADMIN')")
-    public int syncBetween(LocalDate start, LocalDate end) {
-        List<AttendanceRecord> records = attendanceRepository.findByDateBetween(start, end);
-        int updated = 0;
-        for (AttendanceRecord r : records) {
-            sync(r);
-            updated++;
-        }
-        return updated;
-    }
+//    @Transactional
+//    @PreAuthorize("hasRole('ADMIN')")
+//    public int syncBetween(LocalDate start, LocalDate end) {
+//        List<AttendanceRecord> records = attendanceRepository.findByDateBetween(start, end);
+//        int updated = 0;
+//        for (AttendanceRecord r : records) {
+//            sync(r);
+//            updated++;
+//        }
+//        return updated;
+//    }
 
     /* Helper methods */
-    private long duration(LocalDateTime start, LocalDateTime end) {
-        return Duration.between(start, end).toMinutes();
-    }
+//    private long duration(LocalDateTime start, LocalDateTime end) {
+//        return Duration.between(start, end).toMinutes();
+//    }
 
     private void checkLate(AttendanceRecord record) {
         if (record.getCheckIn() == null) return;
@@ -266,7 +265,6 @@ public class AttendanceService {
         record.setLateMinutes(isLate ? late : 0);
     }
 
-    // Classify type of record (FULLDAY | HALFDAY | ABSENCE | OVERTIME | UNKNOWN)
     private void classify(AttendanceRecord record) {
         double hrs = record.getWorkHours() == null ? 0.0 : record.getWorkHours();
         if (hrs > 9.0) record.setType(AttendanceType.OVERTIME);
@@ -289,7 +287,7 @@ public class AttendanceService {
 
             record.setWorkHours(Math.round(hours * 100.0) / 100.0);
             // Check if not enough standard work hours
-            record.setNotEnoughHours(hours < STANDARD_WORK_HOURS);
+            record.setNotEnoughHours(hours < standardWorkHours);
 
             if (hours < standardWorkHours) {
                 record.setMissingHours(standardWorkHours - hours);
@@ -299,78 +297,72 @@ public class AttendanceService {
         }
     }
 
-    private void sync(AttendanceRecord r) {
-        LocalDate date = r.getDate();
-        LocalDateTime in  = r.getCheckIn();
-        LocalDateTime out = r.getCheckOut();
+//    private void sync(AttendanceRecord r) {
+//        LocalDate date = r.getDate();
+//        LocalDateTime in  = r.getCheckIn();
+//        LocalDateTime out = r.getCheckOut();
+//
+//        double workHours = 0.0;
+//        boolean isLate = false;
+//        int lateMins = 0;
+//        boolean notEnough = true;
+//        double missing = STANDARD_WORK_HOURS;
+//        WorkLocation loc = WorkLocation.OFFICE;
+//        AttendanceStatus status = AttendanceStatus.ABSENT;
+//        AttendanceType type = AttendanceType.ABSENCE;
+//
+//        if (in != null) {
+//            if (out != null) {
+//                long totalMinutes = duration(in, out);
+//                if (overlapsLunch(in.toLocalTime(), out.toLocalTime())) {
+//                    totalMinutes = Math.max(0, totalMinutes - LUNCH_MINUTES);
+//                    workHours = Math.round((totalMinutes / 60.0) * 100.0) / 100.0;
+//                }
+//            }
+//
+//            // Late logic
+//            LocalDateTime shiftStart = date.atTime(SHIFT_START);
+//            lateMins = (in.isAfter(shiftStart)) ? (int) duration(shiftStart, in) : 0;
+//            isLate = lateMins > 0;
+//
+//            // Missing / not enough
+//            missing = Math.round(Math.max(0.0, STANDARD_WORK_HOURS - workHours) * 100.0) / 100.0;;
+//            notEnough = workHours < STANDARD_WORK_HOURS;
+//
+//            loc = WorkLocation.OFFICE;
+//
+//            if (isLate) status = AttendanceStatus.LATE_ARRIVAL;
+//            else status = AttendanceStatus.WORK_FROM_OFFICE;
+//
+//            if (workHours >= STANDARD_WORK_HOURS) {
+//                type = (workHours > STANDARD_WORK_HOURS) ? AttendanceType.OVERTIME : AttendanceType.FULL_DAY;
+//            } else if (workHours >= 4.0) {
+//                type = AttendanceType.HALF_DAY;
+//            } else {
+//                status = AttendanceStatus.ABSENT;
+//            }
+//
+//            r.setWorkHours(workHours);
+//            r.setIsLate(isLate);
+//            r.setLateMinutes(lateMins);
+//            r.setNotEnoughHours(notEnough);
+//            r.setMissingHours(missing);
+//            r.setWorkLocation(loc);
+//            r.setStatus(status);
+//            r.setType(type);
+//
+//            attendanceRepository.save(r);
+//        }
+//    }
 
-        double workHours = 0.0;
-        boolean isLate = false;
-        int lateMins = 0;
-        boolean notEnough = true;
-        double missing = STANDARD_WORK_HOURS;
-        WorkLocation loc = WorkLocation.OFFICE;
-        AttendanceStatus status = AttendanceStatus.ABSENT;
-        AttendanceType type = AttendanceType.ABSENCE;
-
-        if (in != null) {
-            if (out != null) {
-                long totalMinutes = duration(in, out);
-                if (overlapsLunch(in.toLocalTime(), out.toLocalTime())) {
-                    totalMinutes = Math.max(0, totalMinutes - LUNCH_MINUTES);
-                    workHours = Math.round((totalMinutes / 60.0) * 100.0) / 100.0;
-                }
-            }
-
-            // Late logic
-            LocalDateTime shiftStart = date.atTime(SHIFT_START);
-            lateMins = (in.isAfter(shiftStart)) ? (int) duration(shiftStart, in) : 0;
-            isLate = lateMins > 0;
-
-            // Missing / not enough
-            missing = Math.round(Math.max(0.0, STANDARD_WORK_HOURS - workHours) * 100.0) / 100.0;;
-            notEnough = workHours < STANDARD_WORK_HOURS;
-
-            loc = WorkLocation.OFFICE;
-
-            if (isLate) status = AttendanceStatus.LATE_ARRIVAL;
-            else status = AttendanceStatus.WORK_FROM_OFFICE;
-
-            if (workHours >= STANDARD_WORK_HOURS) {
-                type = (workHours > STANDARD_WORK_HOURS) ? AttendanceType.OVERTIME : AttendanceType.FULL_DAY;
-            } else if (workHours >= 4.0) {
-                type = AttendanceType.HALF_DAY;
-            } else {
-                status = AttendanceStatus.ABSENT;
-            }
-
-            r.setWorkHours(workHours);
-            r.setIsLate(isLate);
-            r.setLateMinutes(lateMins);
-            r.setNotEnoughHours(notEnough);
-            r.setMissingHours(missing);
-            r.setWorkLocation(loc);
-            r.setStatus(status);
-            r.setType(type);
-
-            attendanceRepository.save(r);
-        }
-    }
-
-    private boolean overlapsLunch(LocalTime start, LocalTime end) {
-        if (start == null || end == null) return false;
-        if (end.isBefore(start)) return false;
-        // Typical lunch window 12:00–13:00
-        LocalTime LUNCH_START = LocalTime.NOON;
-        LocalTime LUNCH_END   = LocalTime.NOON.plusHours(1);
-        return !(end.isBefore(LUNCH_START) || start.isAfter(LUNCH_END));
-    }
-
-    private final EnumSet<AttendanceStatus> PRESENT_STATUSES = EnumSet.of(
-            AttendanceStatus.PRESENT,
-            AttendanceStatus.WORK_FROM_OFFICE,
-            AttendanceStatus.WORK_FROM_HOME
-    );
+//    private boolean overlapsLunch(LocalTime start, LocalTime end) {
+//        if (start == null || end == null) return false;
+//        if (end.isBefore(start)) return false;
+//        // Typical lunch window 12:00–13:00
+//        LocalTime LUNCH_START = LocalTime.NOON;
+//        LocalTime LUNCH_END   = LocalTime.NOON.plusHours(1);
+//        return !(end.isBefore(LUNCH_START) || start.isAfter(LUNCH_END));
+//    }
 
     private record Metrics(int totalDays, int presentDays, int lateDays, int absentDays, double avgHours) {
     }
@@ -379,7 +371,7 @@ public class AttendanceService {
         int totalDays = records.size();
 
         int presentDays = (int) records.stream()
-                .filter(r -> PRESENT_STATUSES.contains(r.getStatus()))
+                .filter(r -> AttendanceStatus.PRESENT.equals(r.getStatus()))
                 .count();
 
         int lateDays = (int) records.stream()
@@ -397,6 +389,5 @@ public class AttendanceService {
 
         return new Metrics(totalDays, presentDays, lateDays, absentDays, avgHours);
     }
-
 }
 

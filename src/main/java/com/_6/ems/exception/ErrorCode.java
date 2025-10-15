@@ -89,6 +89,10 @@ public enum ErrorCode {
     // 9xxx - Privilege & Role
     // =====================================================
     PRIVILEGE_NOT_FOUND(9001, "Privilege not found", HttpStatus.NOT_FOUND),
+    // =====================================================
+    // 10xxx - Privilege & Role
+    // =====================================================
+    SALARY_NOT_FOUND(10001, "Salary not found", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {

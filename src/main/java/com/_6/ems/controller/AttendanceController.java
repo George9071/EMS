@@ -199,21 +199,21 @@ public class AttendanceController {
                 .build());
     }
 
-    @GetMapping("/sync")
-    @Operation(
-            summary = "Synchronize data",
-            description = "Synchronize data of a specific month."
-    )
-    public ApiResponse<String> SyncData(
-            @Parameter(description = "2025-01-01", required = true) @RequestParam LocalDate start,
-            @Parameter(description = "2025-12-31", required = true) @RequestParam LocalDate end) {
-
-        int records = attendanceService.syncBetween(start, end);
-
-        return ApiResponse.<String>builder()
-                .code(200)
-                .message("Number of sync records = " + records)
-                .result("Synchronize data successfully")
-                .build();
-    }
+//    @GetMapping("/sync")
+//    @Operation(
+//            summary = "Synchronize data",
+//            description = "Synchronize data of a specific month."
+//    )
+//    public ApiResponse<String> SyncData(
+//            @Parameter(description = "2025-01-01", required = true) @RequestParam LocalDate start,
+//            @Parameter(description = "2025-12-31", required = true) @RequestParam LocalDate end) {
+//
+//        int records = attendanceService.syncBetween(start, end);
+//
+//        return ApiResponse.<String>builder()
+//                .code(200)
+//                .message("Number of sync records = " + records)
+//                .result("Synchronize data successfully")
+//                .build();
+//    }
 }
