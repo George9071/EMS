@@ -282,7 +282,9 @@ public class AttendanceService {
             );
 
             // skip lunch break
-            long totalMinutes = duration.toMinutes() - LUNCH_MINUTES;
+            long totalMinutes = (duration.toMinutes() - LUNCH_MINUTES) < 0
+                    ? 0
+                    : duration.toMinutes() - LUNCH_MINUTES;
             double hours = totalMinutes / 60.0;
 
             record.setWorkHours(Math.round(hours * 100.0) / 100.0);
