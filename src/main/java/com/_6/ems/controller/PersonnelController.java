@@ -3,21 +3,22 @@ package com._6.ems.controller;
 import com._6.ems.dto.request.PersonnelCreationRequest;
 import com._6.ems.dto.request.PersonnelUpdateRequest;
 import com._6.ems.dto.response.*;
-import com._6.ems.mapper.PersonnelMapper;
 import com._6.ems.service.PersonnelService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@Tag(name = "Personnel", description = "Personnel profile APIs")
 @Slf4j
 @RestController
 @RequestMapping("/personnels")
@@ -25,8 +26,8 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PersonnelController {
     PersonnelService personnelService;
-    PersonnelMapper personnelMapper;
 
+    @Operation(summary = "Get my profile")
     @GetMapping("/myInfo")
     ApiResponse<PersonnelResponse> getMyInfo(){
         return ApiResponse.<PersonnelResponse>builder()
@@ -34,6 +35,7 @@ public class PersonnelController {
                 .build();
     }
 
+    @Operation(summary = "Get my notifications")
     @GetMapping("/notifications")
     ApiResponse<List<NotiResponse>> getMyNotification(){
         return ApiResponse.<List<NotiResponse>>builder()
@@ -41,6 +43,7 @@ public class PersonnelController {
                 .build();
     }
 
+    @Operation(summary = "List all personnel details")
     @GetMapping("/all")
     public ApiResponse<List<PersonnelResponse>> getAllPersonnel() {
         List<PersonnelResponse> personnel = personnelService.getAllPersonnel();
@@ -49,21 +52,26 @@ public class PersonnelController {
                 .build();
     }
 
+    @Operation(summary = "Get personnel data by code")
     @GetMapping("/{code}")
-    public ApiResponse<PersonnelResponse> getPersonnelByCode(@PathVariable String code) {
+    public ApiResponse<PersonnelResponse> getPersonnelByCode(
+            @Parameter(description = "Personnel code") @PathVariable String code) {
         PersonnelResponse personnel = personnelService.getPersonnelByCode(code);
         return ApiResponse.<PersonnelResponse>builder()
                 .result(personnel)
                 .build();
     }
 
+    @Operation(summary = "Mark notification as read")
     @PostMapping("/notifications/{notificationId}")
-    public ApiResponse<NotiResponse> markAsRead(@PathVariable String notificationId) {
+    public ApiResponse<NotiResponse> markAsRead(
+            @Parameter(description = "Notification ID") @PathVariable String notificationId) {
         return ApiResponse.<NotiResponse>builder()
                 .result(personnelService.markAsRead(notificationId))
                 .build();
     }
 
+    @Operation(summary = "Create personnel")
     @PostMapping
     ApiResponse<PersonnelResponse> createPersonnel(@RequestBody @Valid PersonnelCreationRequest request){
         ApiResponse<PersonnelResponse> apiResponse = new ApiResponse<>();
@@ -73,13 +81,17 @@ public class PersonnelController {
         return apiResponse;
     }
 
+    @Operation(summary = "Update personnel (partial)")
     @PatchMapping("/{code}")
-    ApiResponse<PersonnelResponse> updateUser(@PathVariable String code, @RequestBody PersonnelUpdateRequest request){
+    ApiResponse<PersonnelResponse> updateUser(
+            @Parameter(description = "Personnel code") @PathVariable String code,
+            @RequestBody PersonnelUpdateRequest request){
         return ApiResponse.<PersonnelResponse>builder()
                 .result(personnelService.updatePersonnel(code, request))
                 .build();
     }
 
+    @Operation(summary = "Upload avatar", description = "Support file .jfif, .png, .jpeg, .jpg extension")
     @PostMapping(
             value="/upload-avatar",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -90,8 +102,10 @@ public class PersonnelController {
                 .build();
     }
 
+    @Operation(summary = "Delete personnel")
     @DeleteMapping("/{code}")
-    public ApiResponse<String> deletePersonnel(@PathVariable String code) {
+    public ApiResponse<String> deletePersonnel(
+            @Parameter(description = "Personnel code") @PathVariable String code) {
         personnelService.deletePersonnel(code);
         return ApiResponse.<String>builder()
                 .result("Personnel has been deleted")

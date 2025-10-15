@@ -101,7 +101,8 @@ public class ProjectService {
 
         if (project.getEmployees().remove(employee)) {
             employee.getProjects().remove(project);
-            project.setParticipants(project.getParticipants() - 1);
+            project.getEmployees().remove(employee);
+            project.setParticipants(project.getEmployees().size());
         }
 
         projectRepository.save(project);
