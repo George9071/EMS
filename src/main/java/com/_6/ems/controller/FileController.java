@@ -5,6 +5,7 @@ import java.util.List;
 import com._6.ems.dto.request.FileCreationRequest;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,7 +23,10 @@ public class FileController {
 
     FileService fileService;
 
-    @PostMapping("/upload")
+    @PostMapping(
+            value="/upload-avatar",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ApiResponse<FileResponse> uploadFile(
             @RequestBody MultipartFile file,
             @RequestParam String uploaderCode,

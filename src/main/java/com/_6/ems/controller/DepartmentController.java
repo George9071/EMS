@@ -2,6 +2,8 @@ package com._6.ems.controller;
 
 import com._6.ems.dto.request.DepartmentCreationRequest;
 import com._6.ems.dto.response.EmployeeInDepartmentResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -13,7 +15,7 @@ import com._6.ems.service.DepartmentService;
 
 import java.util.List;
 
-
+@Tag(name = "Departments", description = "Department management APIs")
 @RestController
 @RequestMapping("/departments")
 @RequiredArgsConstructor
@@ -22,6 +24,10 @@ public class DepartmentController {
 
     DepartmentService departmentService;
 
+    @Operation(
+        summary = "Create a department",
+        description = "Creates a new department. The department may or may not have a manager at creation time."
+    )
     @PostMapping
     public ApiResponse<DepartmentResponse> createDepartment(@RequestBody DepartmentCreationRequest request) {
         return ApiResponse.<DepartmentResponse>builder()
@@ -30,6 +36,10 @@ public class DepartmentController {
                 .build();
     }
 
+    @Operation(
+        summary = "Get department by id",
+        description = "Returns a department by its  ID."
+    )
     @GetMapping
     public ApiResponse<DepartmentResponse> getDepartmentById(@RequestParam int id) {
         return ApiResponse.<DepartmentResponse>builder()
@@ -38,6 +48,7 @@ public class DepartmentController {
     }
 
     @GetMapping("/all")
+    @Operation(summary = "List all departments")
     public ApiResponse<List<DepartmentResponse>> getAllDepartments() {
         List<DepartmentResponse> departments = departmentService.getAllDepartments();
         return ApiResponse.<List<DepartmentResponse>>builder()
@@ -45,6 +56,7 @@ public class DepartmentController {
                 .build();
     }
 
+    @Operation(summary = "Get employees in a department")
     @GetMapping("/{id}/employees")
     public ApiResponse<EmployeeInDepartmentResponse> getEmployeesInDepartment(@PathVariable int id) {
         return ApiResponse.<EmployeeInDepartmentResponse>builder()
@@ -52,6 +64,10 @@ public class DepartmentController {
                 .build();
     }
 
+    @Operation(
+        summary = "Assign manager to department",
+        description = "Assigns the manager (by managerId) to the department."
+    )
     @PutMapping("/{departmentId}/manager/assign")
     public ApiResponse<DepartmentResponse> assignManager(@PathVariable int departmentId, @RequestParam String managerId) {
         return ApiResponse.<DepartmentResponse>builder()
@@ -59,6 +75,8 @@ public class DepartmentController {
                 .build();
     }
 
+
+    @Operation(summary = "Remove manager from department")
     @PutMapping("/{departmentId}/manager/remove")
     public ApiResponse<DepartmentResponse> removeManager(@PathVariable int departmentId) {
         return ApiResponse.<DepartmentResponse>builder()
