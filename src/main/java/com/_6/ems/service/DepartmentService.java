@@ -43,23 +43,20 @@ public class DepartmentService {
     @PreAuthorize("hasRole('ADMIN')")
     public DepartmentResponse createDepartment(DepartmentCreationRequest request) {
         Department dept = departmentMapper.toDepartment(request);
-        Department savedDept = departmentRepository.save(dept); // must exist if Manager holds FK
+        Department savedDept = departmentRepository.save(dept);
 
-        if (request.getManager_id() != null) {
-            Manager manager = managerRepository.findById(request.getManager_id())
-                    .orElseThrow(() -> new AppException(ErrorCode.MANAGER_NOT_FOUND));
+        String managerId = request.getManager_id();
+        if (managerId == null || managerId.isBlank()) return departmentMapper.toDepartmentResponse(savedDept);
 
-            Department prev = manager.getDepartment();
-            if (prev != null && prev.getId() != savedDept.getId()) {
-                prev.setManager(null);
-                manager.setDepartment(null);
-            }
+        Manager manager = managerRepository.findById(request.getManager_id())
+                .orElseThrow(() -> new AppException(ErrorCode.MANAGER_NOT_FOUND));
 
-            // set new link (owning side is manager)
-            manager.setDepartment(savedDept);
-            savedDept.setManager(manager);
-            managerRepository.save(manager);
-        }
+        Department prev = manager.getDepartment();
+        if (prev != null && prev.getId() != savedDept.getId()) prev.setManager(null);
+
+        manager.setDepartment(savedDept);
+        savedDept.setManager(manager);
+        managerRepository.save(manager);
 
         return departmentMapper.toDepartmentResponse(savedDept);
     }

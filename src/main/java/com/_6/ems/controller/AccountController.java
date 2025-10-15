@@ -4,20 +4,19 @@ import java.util.List;
 
 import com._6.ems.dto.response.AccountResponse;
 import com._6.ems.mapper.AccountMapper;
-import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import com._6.ems.dto.request.AccountCreationRequest;
 import com._6.ems.dto.request.AccountUpdateRequest;
 import com._6.ems.dto.response.ApiResponse;
-import com._6.ems.entity.Account;
 import com._6.ems.service.AccountService;
 
 @Slf4j
@@ -42,6 +41,10 @@ public class AccountController {
 //    }
 
     @GetMapping
+    @Operation(
+        summary = "Get all accounts",
+        description = "Retrieve a list of all existing accounts. Only admin can call this API."
+    )
     ApiResponse<List<AccountResponse>> getAccounts(){
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         log.info("auth: {}", authentication);
@@ -58,12 +61,23 @@ public class AccountController {
     }
 
     @GetMapping("/{accountId}")
+    @Operation(
+            summary = "Get account by ID",
+            description = "Retrieve a single account by its unique ID."
+    )
     ApiResponse<AccountResponse> getAccount(@PathVariable("accountId") String accountId){
         return ApiResponse.<AccountResponse>builder()
                 .result(accountMapper.toAccountResponse(accountService.getAccount(accountId)))
                 .build();
     }
 
+    @Operation(
+            summary = "Update account details",
+            description = "Update information of an existing account by ID",
+            parameters = {
+                    @Parameter(name = "accountId", description = "Unique ID of the account", required = true)
+            }
+    )
     @PutMapping("/{accountId}")
     ApiResponse<AccountResponse> updateAccount(@PathVariable String accountId, @RequestBody AccountUpdateRequest request){
         return ApiResponse.<AccountResponse>builder()
@@ -71,6 +85,13 @@ public class AccountController {
                 .build();
     }
 
+    @Operation(
+            summary = "Delete account",
+            description = "Delete an existing account by its ID.",
+            parameters = {
+                    @Parameter(name = "accountId", description = "Unique ID of the account to delete", required = true)
+            }
+    )
     @DeleteMapping("/{accountId}")
     ApiResponse<String> deleteAccount(@PathVariable String accountId){
         accountService.deleteAccount(accountId);

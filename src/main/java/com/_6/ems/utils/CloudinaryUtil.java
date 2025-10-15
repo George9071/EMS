@@ -19,7 +19,7 @@ public class CloudinaryUtil {
 
     private final Cloudinary cloudinary;
 
-    private final  List<String> ALLOWED_EXTENSIONS = List.of("pdf", "docx", "txt", "png", "csv", "jfif");
+    private final  List<String> ALLOWED_EXTENSIONS = List.of("pdf", "docx", "txt", "png", "csv", "jfif", "png", "jpeg", "jpg");
 
     private final  List<String> ALLOWED_CONTENT_TYPES = List.of(
             "application/pdf",

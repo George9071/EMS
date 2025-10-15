@@ -6,59 +6,89 @@ import org.springframework.http.HttpStatusCode;
 
 @Getter
 public enum ErrorCode {
+
+    // =====================================================
+    // 0xxx - General & System
+    // =====================================================
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
+    EMAIL_EXCEPTION(100, "Email sending error", HttpStatus.INTERNAL_SERVER_ERROR),
 
-    UNAUTHENTICATED(1007, "Unauthenticated", HttpStatus.UNAUTHORIZED),
-    UNAUTHORIZED(1008, "You do not have permission", HttpStatus.FORBIDDEN),
-    ACCESS_DENIED(1009, "You do not have permission", HttpStatus.FORBIDDEN),
+    // =====================================================
+    // 1xxx - Authentication & Authorization
+    // =====================================================
+    UNAUTHENTICATED(1001, "Unauthenticated", HttpStatus.UNAUTHORIZED),
+    UNAUTHORIZED(1002, "You do not have permission", HttpStatus.FORBIDDEN),
+    ACCESS_DENIED(1003, "Access denied", HttpStatus.FORBIDDEN),
+    INVALID_KEY(1004, "Invalid API key", HttpStatus.BAD_REQUEST),
 
-    INVALID_KEY(1001, "Invalid key", HttpStatus.BAD_REQUEST),
-    USER_EXISTED(1002, "User existed", HttpStatus.BAD_REQUEST),
-    USERNAME_INVALID(1003, "Username must be at least {min} characters", HttpStatus.BAD_REQUEST),
-    INVALID_PASSWORD(1004, "Password must be at least {min} characters", HttpStatus.BAD_REQUEST),
-    ACCOUNT_NOT_EXISTED(1005, "User not existed", HttpStatus.NOT_FOUND),
+    // =====================================================
+    // 11xx - Account & User
+    // =====================================================
+    USER_EXISTED(1101, "User already exists", HttpStatus.BAD_REQUEST),
+    USERNAME_INVALID(1102, "Username must be at least {min} characters", HttpStatus.BAD_REQUEST),
+    INVALID_PASSWORD(1103, "Password must be at least {min} characters", HttpStatus.BAD_REQUEST),
+    ACCOUNT_NOT_FOUND(1104, "Account not found", HttpStatus.NOT_FOUND),
+    ACCOUNT_NOT_EXISTED(1105, "User does not exist", HttpStatus.NOT_FOUND),
+    PROFILE_NOT_EXISTED(1106, "Profile not found", HttpStatus.NOT_FOUND),
+    INVALID_DOB(1107, "Age must be at least {min}", HttpStatus.BAD_REQUEST),
+    INVALID_EMAIL_FORMAT(1108, "Invalid email format", HttpStatus.BAD_REQUEST),
+    INVALID_PHONE_NUMBER_LENGTH(1109, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST),
+    PHONE_NUMBER_MUST_BE_DIGITS(1110, "Phone number must contain only digits", HttpStatus.BAD_REQUEST),
 
-    PROFILE_NOT_EXISTED(1006, "Profile not existed",HttpStatus.NOT_FOUND),
-    INVALID_DOB(1009, "Your age must be at least {min}", HttpStatus.BAD_REQUEST),
-    INVALID_EMAIL_FORMAT(1010, "Invalid email format", HttpStatus.BAD_REQUEST),
-    INVALID_PHONE_NUMBER_LENGTH(1011, "Phone number length must be exactly 10 digits", HttpStatus.BAD_REQUEST),
-    PHONE_NUMBER_MUST_BE_DIGITS(1012, "Phone number must be digits", HttpStatus.BAD_REQUEST),
+    // =====================================================
+    // 2xxx - Personnel / Employee / Manager
+    // =====================================================
+    PERSONNEL_NOT_FOUND(2001, "Personnel not found", HttpStatus.NOT_FOUND),
+    EMPLOYEE_NOT_FOUND(2002, "Employee not found", HttpStatus.NOT_FOUND),
+    MANAGER_NOT_FOUND(2003, "Manager not found", HttpStatus.NOT_FOUND),
 
-    EMPLOYEE_NOT_FOUND(2001, "Employee not found", HttpStatus.NOT_FOUND),
-    MANAGER_NOT_FOUND(2002, "Manager not found", HttpStatus.NOT_FOUND),
-
+    // =====================================================
+    // 3xxx - Attendance
+    // =====================================================
     ATTENDANCE_RECORD_NOT_FOUND(3001, "Attendance record not found", HttpStatus.NOT_FOUND),
-    ATTENDANCE_ALREADY_CHECKIN(3002, "Already check-in", HttpStatus.CONFLICT),
-    ATTENDANCE_ALREADY_CHECKOUT(3003, "Already check-out", HttpStatus.CONFLICT),
-    ATTENDANCE_NOT_CHECKIN(3004, "Must check-in before check-out", HttpStatus.CONFLICT),
-    ATTENDANCE_INVALID_TIME(3005, "Invalid time", HttpStatus.CONFLICT),
+    ATTENDANCE_ALREADY_CHECKIN(3002, "Already checked in", HttpStatus.CONFLICT),
+    ATTENDANCE_ALREADY_CHECKOUT(3003, "Already checked out", HttpStatus.CONFLICT),
+    ATTENDANCE_NOT_CHECKIN(3004, "Must check in before check out", HttpStatus.CONFLICT),
+    ATTENDANCE_INVALID_TIME(3005, "Invalid attendance time", HttpStatus.BAD_REQUEST),
 
+    // =====================================================
+    // 4xxx - Department
+    // =====================================================
     DEPARTMENT_NOT_FOUND(4001, "Department not found", HttpStatus.NOT_FOUND),
-    DEPARTMENT_ALREADY_ASSIGNED(4002, "Department already has a manager assigned", HttpStatus.CONFLICT),
-    EMPLOYEE_NOT_BELONG(4003, "Employee not belong to this department", HttpStatus.NOT_FOUND),
+    DEPARTMENT_ALREADY_ASSIGNED(4002, "Department already has a manager", HttpStatus.CONFLICT),
+    EMPLOYEE_NOT_BELONG(4003, "Employee does not belong to this department", HttpStatus.BAD_REQUEST),
 
+    // =====================================================
+    // 5xxx - Project & Task
+    // =====================================================
     PROJECT_NOT_FOUND(5001, "Project not found", HttpStatus.NOT_FOUND),
-    EXCEED_MAX_PARTICIPANTS(5002, "Project is full", HttpStatus.CONFLICT),
+    EXCEED_MAX_PARTICIPANTS(5002, "Project participant limit exceeded", HttpStatus.CONFLICT),
+    TASK_NOT_FOUND(5003, "Task not found", HttpStatus.NOT_FOUND),
 
-    FILE_NOT_FOUND(404, "File not found", HttpStatus.NOT_FOUND),
-    TASK_NOT_FOUND(404, "Task not found", HttpStatus.NOT_FOUND),
+    // =====================================================
+    // 6xxx - File & Media
+    // =====================================================
+    FILE_NOT_FOUND(6001, "File not found", HttpStatus.NOT_FOUND),
 
-    NOTIFICATION_NOT_FOUND(404, "Notification not found", HttpStatus.NOT_FOUND),
-    NOTIFICATION_ONLY_BE_SENT_BY_MANAGER(8001, "Only manager can send notification", HttpStatus.FORBIDDEN),
+    // =====================================================
+    // 7xxx - Notification
+    // =====================================================
+    NOTIFICATION_NOT_FOUND(7001, "Notification not found", HttpStatus.NOT_FOUND),
+    NOTIFICATION_ONLY_BE_SENT_BY_MANAGER(7002, "Only managers can send notifications", HttpStatus.FORBIDDEN),
+    NO_RECIPIENT_FOUND(7003, "No recipient found", HttpStatus.NOT_FOUND),
+    ONLY_ADMIN_CAN_SEND_GLOBAL_NOTIFICATION(7004, "Only admins can send global notifications", HttpStatus.FORBIDDEN),
 
-    PRIVILEGE_NOT_FOUND(404, "Privilege not found", HttpStatus.NOT_FOUND),
+    // =====================================================
+    // 8xxx - Meeting Room
+    // =====================================================
+    MEETING_ROOM_NOT_FOUND(8001, "Meeting room not found", HttpStatus.NOT_FOUND),
+    MEETING_ROOM_CONFLICT(8002, "Meeting room is already booked for this time", HttpStatus.CONFLICT),
+    MEETING_BOOKING_NOT_FOUND(8003, "Meeting booking not found", HttpStatus.NOT_FOUND),
 
-    MEETING_ROOM_NOT_FOUND(404, "Meeting room not found", HttpStatus.NOT_FOUND),
-    MEETING_ROOM_CONFLICT(405, "Room is already booked for this time period", HttpStatus.CONFLICT),
-
-    PERSONNEL_NOT_FOUND(404, "Personnel not found", HttpStatus.NOT_FOUND),
-    MEETING_BOOKING_NOT_FOUND(404, "Meeting booking not found", HttpStatus.NOT_FOUND),
-    EMAIL_EXCEPTION(500, "Email exception", HttpStatus.INTERNAL_SERVER_ERROR),
-
-    ACCOUNT_NOT_FOUND(404, "Account not found", HttpStatus.NOT_FOUND),
-    NO_RECIPIENT_FOUND(404, "No recipient found", HttpStatus.NOT_FOUND),
-    ONLY_ADMIN_CAN_SEND_GLOBAL_NOTIFICATION(405, "Only admin can send global notification", HttpStatus.CONFLICT),
-    SALARY_NOT_FOUND(404, "Salary not found", HttpStatus.NOT_FOUND),
+    // =====================================================
+    // 9xxx - Privilege & Role
+    // =====================================================
+    PRIVILEGE_NOT_FOUND(9001, "Privilege not found", HttpStatus.NOT_FOUND),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
