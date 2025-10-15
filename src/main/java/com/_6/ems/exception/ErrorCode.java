@@ -74,7 +74,7 @@ public enum ErrorCode {
     // 7xxx - Notification
     // =====================================================
     NOTIFICATION_NOT_FOUND(7001, "Notification not found", HttpStatus.NOT_FOUND),
-    NOTIFICATION_ONLY_BY_MANAGER(7002, "Only managers can send notifications", HttpStatus.FORBIDDEN),
+    NOTIFICATION_ONLY_BE_SENT_BY_MANAGER(7002, "Only managers can send notifications", HttpStatus.FORBIDDEN),
     NO_RECIPIENT_FOUND(7003, "No recipient found", HttpStatus.NOT_FOUND),
     ONLY_ADMIN_CAN_SEND_GLOBAL_NOTIFICATION(7004, "Only admins can send global notifications", HttpStatus.FORBIDDEN),
 
