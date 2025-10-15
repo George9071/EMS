@@ -102,6 +102,16 @@ public class AttendanceService {
         return attendanceMapper.toAttendanceRecordResponse(attendanceRecord);
     }
 
+    public AttendanceStatusResponse getTodayStatusByPersonnelCode(String personnelCode) {
+        return attendanceRepository.findTodayRecordByPersonnelCode(personnelCode, LocalDate.now())
+                .map(attendanceRecord  -> AttendanceStatusResponse.builder()
+                        .status(attendanceRecord.getStatus())
+                        .checkIn(attendanceRecord.getCheckIn())
+                        .checkOut(attendanceRecord.getCheckOut())
+                        .build())
+                .orElse(null);
+    }
+
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN') or #employeeCode == authentication.name")
     public AttendanceRecordResponse getRecordByDate(String employeeCode, LocalDate date) {

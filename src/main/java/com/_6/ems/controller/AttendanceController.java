@@ -3,8 +3,7 @@ package com._6.ems.controller;
 import java.time.LocalDate;
 import java.util.List;
 
-import com._6.ems.dto.response.AttendanceMonthlySummary;
-import com._6.ems.dto.response.AttendanceOverviewResponse;
+import com._6.ems.dto.response.*;
 import com._6.ems.utils.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,8 +15,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com._6.ems.dto.response.ApiResponse;
-import com._6.ems.dto.response.AttendanceRecordResponse;
 import com._6.ems.service.AttendanceService;
 
 @RestController
@@ -54,6 +51,12 @@ public class AttendanceController {
                 .result(record)
                 .message("Check-out successful!, time check-out: " + record.getCheckOut())
                 .build();
+    }
+
+    @GetMapping("/today/status")
+    public AttendanceStatusResponse getCurrentUserAttendance() {
+        String personnelCode = SecurityUtil.getCurrentUserCode();
+        return attendanceService.getTodayStatusByPersonnelCode(personnelCode);
     }
 
     @Operation(

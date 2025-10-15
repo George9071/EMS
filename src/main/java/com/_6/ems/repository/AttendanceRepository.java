@@ -99,4 +99,9 @@ public interface AttendanceRepository extends JpaRepository<AttendanceRecord, St
             @Param("month") Integer month,
             @Param("year") Integer year
     );
+
+    @Query("SELECT a FROM AttendanceRecord a " +
+            "WHERE a.personnel.code = :personnelCode AND a.date = :today")
+    Optional<AttendanceRecord> findTodayRecordByPersonnelCode(@Param("personnelCode") String personnelCode,
+                                                              @Param("today") LocalDate today);
 }
