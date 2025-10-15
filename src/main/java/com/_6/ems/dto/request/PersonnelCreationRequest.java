@@ -41,7 +41,6 @@ public class PersonnelCreationRequest {
     String position;
     Double basicSalary;
 
-
     @Valid
     AccountCreationRequest accountCreationRequest;
 }
