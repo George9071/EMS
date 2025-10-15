@@ -50,7 +50,7 @@ public enum ErrorCode {
     ATTENDANCE_ALREADY_CHECKOUT(3003, "Already checked out", HttpStatus.CONFLICT),
     ATTENDANCE_NOT_CHECKIN(3004, "Must check in before check out", HttpStatus.CONFLICT),
     ATTENDANCE_INVALID_TIME(3005, "Invalid attendance time", HttpStatus.BAD_REQUEST),
-
+    ATTENDANCE_NOT_YET(3006, "Haven’t checked in yet", HttpStatus.BAD_REQUEST),
     // =====================================================
     // 4xxx - Department
     // =====================================================

@@ -109,7 +109,7 @@ public class AttendanceService {
                         .checkIn(attendanceRecord.getCheckIn())
                         .checkOut(attendanceRecord.getCheckOut())
                         .build())
-                .orElse(null);
+                .orElseThrow(() -> new AppException(ErrorCode.ATTENDANCE_NOT_YET));
     }
 
     @Transactional(readOnly = true)

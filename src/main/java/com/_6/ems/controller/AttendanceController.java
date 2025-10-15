@@ -54,9 +54,11 @@ public class AttendanceController {
     }
 
     @GetMapping("/today/status")
-    public AttendanceStatusResponse getCurrentUserAttendance() {
+    public ResponseEntity<ApiResponse<AttendanceStatusResponse>> getCurrentUserAttendance() {
         String personnelCode = SecurityUtil.getCurrentUserCode();
-        return attendanceService.getTodayStatusByPersonnelCode(personnelCode);
+        return ResponseEntity.ok(ApiResponse.success(
+                attendanceService.getTodayStatusByPersonnelCode(personnelCode
+                )));
     }
 
     @Operation(
