@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Service
@@ -69,7 +69,7 @@ public class EmailService {
         }
     }
 
-    private String calculateDuration(LocalDateTime startTime, LocalDateTime endTime) {
+    private String calculateDuration(OffsetDateTime startTime, OffsetDateTime endTime) {
         long minutes = java.time.Duration.between(startTime, endTime).toMinutes();
         long hours = minutes / 60;
         long remainingMinutes = minutes % 60;

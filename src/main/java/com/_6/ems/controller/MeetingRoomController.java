@@ -6,7 +6,7 @@ import com._6.ems.service.MeetingRoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @RestController
@@ -30,8 +30,8 @@ public class MeetingRoomController {
 
     @GetMapping("/available-in-time")
     public ResponseEntity<ApiResponse<List<MeetingRoomResponse>>> getAvailableRoomsInTimeRange(
-            @RequestParam LocalDateTime startTime,
-            @RequestParam LocalDateTime endTime) {
+            @RequestParam OffsetDateTime startTime,
+            @RequestParam OffsetDateTime endTime) {
         List<MeetingRoomResponse> rooms = roomService
                 .getAvailableRoomsInTimeRange(startTime, endTime);
         return ResponseEntity.ok(ApiResponse.success(rooms));

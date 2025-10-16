@@ -62,7 +62,7 @@ public class AttendanceService {
 
         if (attendanceRecord.getCheckIn() != null) throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKIN);
 
-        attendanceRecord.setCheckIn(LocalDateTime.now());
+        attendanceRecord.setCheckIn(OffsetDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
 
         if(LocalTime.now().isAfter(SHIFT_START)) {
             attendanceRecord.setStatus(AttendanceStatus.LATE_ARRIVAL);
@@ -88,7 +88,7 @@ public class AttendanceService {
 
         if (attendanceRecord.getCheckOut() != null) throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKOUT);
 
-        attendanceRecord.setCheckOut(LocalDateTime.now());
+        attendanceRecord.setCheckOut(OffsetDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
         calculateWorkHours(attendanceRecord);
         classify(attendanceRecord);
 
@@ -103,12 +103,8 @@ public class AttendanceService {
         return attendanceRepository.findTodayRecordByPersonnelCode(personnelCode, LocalDate.now())
                 .map(attendanceRecord -> AttendanceStatusResponse.builder()
                         .status(attendanceRecord.getStatus())
-                        .checkIn(attendanceRecord.getCheckIn() != null
-                                ? convertToVietnamTime(attendanceRecord.getCheckIn())
-                                : null)
-                        .checkOut(attendanceRecord.getCheckOut() != null
-                                ? convertToVietnamTime(attendanceRecord.getCheckOut())
-                                : null)
+                        .checkIn(attendanceRecord.getCheckIn())
+                        .checkOut(attendanceRecord.getCheckOut())
                         .build())
                 .orElseThrow(() -> new AppException(ErrorCode.ATTENDANCE_NOT_YET));
     }
@@ -262,7 +258,7 @@ public class AttendanceService {
 //    }
 
     /* Helper methods */
-//    private long duration(LocalDateTime start, LocalDateTime end) {
+//    private long duration(OffsetDateTime start, OffsetDateTime end) {
 //        return Duration.between(start, end).toMinutes();
 //    }
 
@@ -312,8 +308,8 @@ public class AttendanceService {
 
 //    private void sync(AttendanceRecord r) {
 //        LocalDate date = r.getDate();
-//        LocalDateTime in  = r.getCheckIn();
-//        LocalDateTime out = r.getCheckOut();
+//        OffsetDateTime in  = r.getCheckIn();
+//        OffsetDateTime out = r.getCheckOut();
 //
 //        double workHours = 0.0;
 //        boolean isLate = false;
@@ -334,7 +330,7 @@ public class AttendanceService {
 //            }
 //
 //            // Late logic
-//            LocalDateTime shiftStart = date.atTime(SHIFT_START);
+//            OffsetDateTime shiftStart = date.atTime(SHIFT_START);
 //            lateMins = (in.isAfter(shiftStart)) ? (int) duration(shiftStart, in) : 0;
 //            isLate = lateMins > 0;
 //
@@ -401,13 +397,6 @@ public class AttendanceService {
                 .orElse(0.0);
 
         return new Metrics(totalDays, presentDays, lateDays, absentDays, avgHours);
-    }
-
-    private LocalDateTime convertToVietnamTime(LocalDateTime utcDateTime) {
-        if (utcDateTime == null) return null;
-        return utcDateTime.atZone(ZoneId.of("UTC"))
-                .withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh"))
-                .toLocalDateTime();
     }
 }
 

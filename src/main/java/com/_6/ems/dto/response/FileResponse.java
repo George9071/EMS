@@ -1,6 +1,6 @@
 package com._6.ems.dto.response;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -16,7 +16,7 @@ public class FileResponse {
     String fileId;
     String taskId;
     String uploaderCode;
-    LocalDateTime uploadTime;
+    OffsetDateTime uploadTime;
     String fileUrl;
     String fileName;
     String fileType;

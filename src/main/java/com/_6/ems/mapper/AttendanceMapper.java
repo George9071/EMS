@@ -9,7 +9,7 @@ import org.mapstruct.Named;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -48,11 +48,11 @@ public interface AttendanceMapper {
 
     // --- Helper methods ---
     @Named("formatDateTime")
-    default String formatDateTime(LocalDateTime time) {
+    default String formatDateTime(OffsetDateTime time) {
         return time == null ? null : time.format(DT);
     }
 
-    default String formatDuration(LocalDateTime in, LocalDateTime out) {
+    default String formatDuration(OffsetDateTime in, OffsetDateTime out) {
         if (in == null || out == null) return "00:00:00";
         if (out.isBefore(in)) return "00:00:00";
         Duration d = Duration.between(in, out);
@@ -60,7 +60,7 @@ public interface AttendanceMapper {
     }
 
     @Named("toLocalTime")
-    default LocalTime toLocalTime(java.time.LocalDateTime dateTime) {
+    default LocalTime toLocalTime(java.time.OffsetDateTime dateTime) {
         return dateTime == null ? null : dateTime.toLocalTime();
     }
 

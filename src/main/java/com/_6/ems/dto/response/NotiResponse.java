@@ -3,7 +3,7 @@ package com._6.ems.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Setter
 @Getter
@@ -15,7 +15,7 @@ public class NotiResponse {
     String id;
     String subject;
     String content;
-    LocalDateTime sendAt;
+    OffsetDateTime sendAt;
     String sender;
     boolean isRead;
 }

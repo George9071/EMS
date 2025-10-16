@@ -4,7 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +30,7 @@ public class Notification {
 
     @Column(name = "send_at", nullable = false, updatable = false)
     @Builder.Default
-    LocalDateTime sendAt = LocalDateTime.now();
+    OffsetDateTime sendAt = OffsetDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_code", referencedColumnName = "code")

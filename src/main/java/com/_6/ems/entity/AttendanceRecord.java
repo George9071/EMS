@@ -8,7 +8,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Getter
 @Setter
@@ -41,10 +41,10 @@ public class AttendanceRecord {
     LocalDate date;
 
     @Column(name = "check_in")
-    LocalDateTime checkIn;
+    OffsetDateTime checkIn;
 
     @Column(name = "check_out")
-    LocalDateTime checkOut;
+    OffsetDateTime checkOut;
 
     @Column(name = "work_hours")
     Double workHours = 0.0;

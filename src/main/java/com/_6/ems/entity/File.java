@@ -6,7 +6,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -35,7 +35,7 @@ public class File {
     String url;
 
     @Column(name = "upload_date", updatable = false)
-    LocalDateTime uploadTime;
+    OffsetDateTime uploadTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_code", nullable = false)

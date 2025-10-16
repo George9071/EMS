@@ -1,7 +1,8 @@
 package com._6.ems.service;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -60,7 +61,7 @@ public class FileService {
                     .name(file.getOriginalFilename())
                     .type(file.getContentType())
                     .url(fileUrl)
-                    .uploadTime(LocalDateTime.now())
+                    .uploadTime(OffsetDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")))
                     .uploader(employee)
                     .task(task)
                     .build();

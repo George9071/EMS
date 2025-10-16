@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Repository
@@ -15,7 +15,7 @@ public interface MeetingRoomRepository extends JpaRepository<MeetingRoom, Long> 
             "(SELECT b.roomId FROM MeetingBooking b WHERE " +
             "(b.startTime < :endTime AND b.endTime > :startTime))")
     List<MeetingRoom> findAvailableRoomsInTimeRange(
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime
+            @Param("startTime") OffsetDateTime startTime,
+            @Param("endTime") OffsetDateTime endTime
     );
 }

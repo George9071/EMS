@@ -7,7 +7,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +22,7 @@ public interface NotificationMapper {
     NotificationResponse toResponse(Notification notification);
 
     @Named("formatDateTime")
-    static String formatDateTime(LocalDateTime time) {
+    static String formatDateTime(OffsetDateTime time) {
         return time != null ? time.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : null;
     }
 

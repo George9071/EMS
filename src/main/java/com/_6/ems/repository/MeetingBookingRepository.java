@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Repository
@@ -15,8 +15,8 @@ public interface MeetingBookingRepository extends JpaRepository<MeetingBooking, 
             "AND ((b.startTime < :endTime AND b.endTime > :startTime))")
     boolean existsConflictingBooking(
             @Param("roomId") Long roomId,
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime
+            @Param("startTime") OffsetDateTime startTime,
+            @Param("endTime") OffsetDateTime endTime
     );
 
     @Query("""
@@ -26,5 +26,5 @@ public interface MeetingBookingRepository extends JpaRepository<MeetingBooking, 
     """)
     List<MeetingBooking> findBookingsByUserCode(@Param("userCode") String userCode);
 
-    boolean existsByRoomIdAndStartTimeBeforeAndEndTimeAfter(Long roomId, LocalDateTime startTime, LocalDateTime endTime);
+    boolean existsByRoomIdAndStartTimeBeforeAndEndTimeAfter(Long roomId, OffsetDateTime startTime, OffsetDateTime endTime);
 }

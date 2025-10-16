@@ -1,6 +1,6 @@
 package com._6.ems.dto.response;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import com._6.ems.enums.TaskStatus;
 import lombok.AccessLevel;
@@ -17,7 +17,7 @@ public class TaskResponse {
     String id;
     String title;
     String description;
-    LocalDateTime due;
+    OffsetDateTime due;
     TaskStatus status;
     String project_id;
     String assignee_code;

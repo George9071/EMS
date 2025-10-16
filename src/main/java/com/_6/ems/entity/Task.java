@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +30,7 @@ public class Task {
     String description;
 
     @Column(name = "due")
-    LocalDateTime due;
+    OffsetDateTime due;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
@@ -45,10 +45,10 @@ public class Task {
     Employee assignee;
 
     @Column(name = "assigned_at")
-    LocalDateTime assignedAt;
+    OffsetDateTime assignedAt;
 
     @Column(name = "last_status_change")
-    LocalDateTime lastStatusChange;
+    OffsetDateTime lastStatusChange;
 
     @OneToMany(mappedBy = "task", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     @Builder.Default

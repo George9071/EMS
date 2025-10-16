@@ -1,6 +1,6 @@
 package com._6.ems.dto.request;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -15,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 public class TaskCreationRequest {
     String title;
     String description;
-    LocalDateTime due;
+    OffsetDateTime due;
     String project_id;
     String assignee_code;
 }

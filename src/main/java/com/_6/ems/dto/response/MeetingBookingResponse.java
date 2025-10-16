@@ -6,7 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Data
@@ -21,13 +21,13 @@ public class MeetingBookingResponse {
     private String description;
 
     @JsonFormat(pattern = "HH:mm:ss dd/MM/yyyy", timezone = "Asia/Ho_Chi_Minh")
-    private LocalDateTime startTime;
+    private OffsetDateTime startTime;
 
     @JsonFormat(pattern = "HH:mm:ss dd/MM/yyyy", timezone = "Asia/Ho_Chi_Minh")
-    private LocalDateTime endTime;
+    private OffsetDateTime endTime;
 
     private List<String> attendeeNames;
 
     @JsonFormat(pattern = "HH:mm:ss dd/MM/yyyy", timezone = "Asia/Ho_Chi_Minh")
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 }
