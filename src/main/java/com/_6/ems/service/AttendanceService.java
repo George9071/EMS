@@ -1,9 +1,6 @@
 package com._6.ems.service;
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -104,10 +101,14 @@ public class AttendanceService {
 
     public AttendanceStatusResponse getTodayStatusByPersonnelCode(String personnelCode) {
         return attendanceRepository.findTodayRecordByPersonnelCode(personnelCode, LocalDate.now())
-                .map(attendanceRecord  -> AttendanceStatusResponse.builder()
+                .map(attendanceRecord -> AttendanceStatusResponse.builder()
                         .status(attendanceRecord.getStatus())
-                        .checkIn(attendanceRecord.getCheckIn())
-                        .checkOut(attendanceRecord.getCheckOut())
+                        .checkIn(attendanceRecord.getCheckIn() != null
+                                ? convertToVietnamTime(attendanceRecord.getCheckIn())
+                                : null)
+                        .checkOut(attendanceRecord.getCheckOut() != null
+                                ? convertToVietnamTime(attendanceRecord.getCheckOut())
+                                : null)
                         .build())
                 .orElseThrow(() -> new AppException(ErrorCode.ATTENDANCE_NOT_YET));
     }
@@ -400,6 +401,13 @@ public class AttendanceService {
                 .orElse(0.0);
 
         return new Metrics(totalDays, presentDays, lateDays, absentDays, avgHours);
+    }
+
+    private LocalDateTime convertToVietnamTime(LocalDateTime utcDateTime) {
+        if (utcDateTime == null) return null;
+        return utcDateTime.atZone(ZoneId.of("UTC"))
+                .withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh"))
+                .toLocalDateTime();
     }
 }
 
