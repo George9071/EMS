@@ -32,10 +32,10 @@ public class AttendanceController {
     )
     @PostMapping("/checkIn")
     public ApiResponse<AttendanceRecordResponse> checkIn() {
-        AttendanceRecordResponse record = attendanceService.checkIn();
+        AttendanceRecordResponse attendanceRecord = attendanceService.checkIn();
         return ApiResponse.<AttendanceRecordResponse>builder()
-                .result(record)
-                .message("Check-in successful!, time check-in: " + record.getCheckIn())
+                .result(attendanceRecord)
+                .message("Check-in successful!, time check-in: " + attendanceRecord.getCheckIn())
                 .build();
     }
 
@@ -46,10 +46,10 @@ public class AttendanceController {
     )
     @PostMapping("/checkOut")
     public ApiResponse<AttendanceRecordResponse> checkOut() {
-        AttendanceRecordResponse record = attendanceService.checkOut();
+        AttendanceRecordResponse attendanceRecord = attendanceService.checkOut();
         return ApiResponse.<AttendanceRecordResponse>builder()
-                .result(record)
-                .message("Check-out successful!, time check-out: " + record.getCheckOut())
+                .result(attendanceRecord)
+                .message("Check-out successful!, time check-out: " + attendanceRecord.getCheckOut())
                 .build();
     }
 
@@ -70,9 +70,9 @@ public class AttendanceController {
             @PathVariable String code,
             @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
-        var record = attendanceService.getRecordByDate(code, date);
+        var attendanceRecord = attendanceService.getRecordByDate(code, date);
         return ApiResponse.<AttendanceRecordResponse>builder()
-                .result(record)
+                .result(attendanceRecord)
                 .message("Fetched record successfully")
                 .build();
     }
