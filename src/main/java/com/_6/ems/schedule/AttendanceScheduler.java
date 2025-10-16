@@ -11,6 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 @Component
@@ -22,7 +23,7 @@ public class AttendanceScheduler {
     @Scheduled(cron = "0 0 2 * * 1-5", zone = "Asia/Ho_Chi_Minh")
     @Transactional
     public void createAttendanceRecordForToday() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         List<Personnel> personnelList = personnelRepository.findAll();
 
         for (Personnel p : personnelList) {
@@ -41,7 +42,7 @@ public class AttendanceScheduler {
     @Scheduled(cron = "0 0 5 * * TUE-SAT", zone = "Asia/Ho_Chi_Minh")
     @Transactional
     public void markIncompleteCheckoutsAsAbsent() {
-        LocalDate yesterday = LocalDate.now().minusDays(1);
+        LocalDate yesterday = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).minusDays(1);
 
 
         List<AttendanceRecord> incompleteRecords =

@@ -46,6 +46,7 @@ public class AttendanceRecord {
     @Column(name = "check_out")
     OffsetDateTime checkOut;
 
+    @Builder.Default
     @Column(name = "work_hours")
     Double workHours = 0.0;
 
@@ -56,15 +57,18 @@ public class AttendanceRecord {
     @Column(name = "is_late")
     Boolean isLate;
 
+    @Builder.Default
     @Column(name = "late_minutes")
     Integer lateMinutes = 0;
 
     @Column(name = "not_enough_hours")
     Boolean notEnoughHours;
 
+    @Builder.Default
     @Column(name = "missing_hours")
     Double missingHours = 0.0;
 
+    @Builder.Default
     @Column(name = "work_location")
     @Enumerated(EnumType.STRING)
     WorkLocation workLocation = WorkLocation.OFFICE;

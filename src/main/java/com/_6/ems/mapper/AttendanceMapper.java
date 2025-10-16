@@ -10,7 +10,7 @@ import org.mapstruct.Named;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.LocalTime;
+import java.time.OffsetTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,8 +31,8 @@ public interface AttendanceMapper {
 
     @Mapping(target = "date", source = "date")
     @Mapping(target = "day", expression = "java(getDayOfWeekInEnglish(record.getDate()))")
-    @Mapping(target = "checkIn", expression = "java(toLocalTime(record.getCheckIn()))")
-    @Mapping(target = "checkOut", expression = "java(toLocalTime(record.getCheckOut()))")
+    @Mapping(target = "checkIn", expression = "java(toOffsetTime(record.getCheckIn()))")
+    @Mapping(target = "checkOut", expression = "java(toOffsetTime(record.getCheckOut()))")
     @Mapping(target = "workHours", expression = "java(formatWorkHours(record.getWorkHours()))")
     @Mapping(target = "status", source = "status")
     @Mapping(target = "notEnoughHour", expression = "java(isNotEnoughHour(record.getWorkHours()))")
@@ -59,9 +59,9 @@ public interface AttendanceMapper {
         return String.format("%02d:%02d:%02d", d.toHours(), d.toMinutesPart(), d.toSecondsPart());
     }
 
-    @Named("toLocalTime")
-    default LocalTime toLocalTime(java.time.OffsetDateTime dateTime) {
-        return dateTime == null ? null : dateTime.toLocalTime();
+    @Named("toOffsetTime")
+    default OffsetTime toOffsetTime(java.time.OffsetDateTime dateTime) {
+        return dateTime == null ? null : dateTime.toOffsetTime();
     }
 
     @Named("getDayOfWeekInEnglish")

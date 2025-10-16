@@ -35,8 +35,8 @@ public class AttendanceService {
     @Value("${salary.standard-work-hours}")
     private static double standardWorkHours;
 
-    private static final LocalTime SHIFT_START = LocalTime.of(9, 0);
-//    private static final LocalTime SHIFT_END = LocalTime.of(18, 0);
+    private static final OffsetTime SHIFT_START = OffsetTime.of(9, 0, 0, 0 , ZoneOffset.ofHours(7));
+//    private static final OffsetTime SHIFT_END = OffsetTime.of(18, 0);
     private static final int LUNCH_MINUTES = 60;
 
     AttendanceRepository attendanceRepository;
@@ -50,7 +50,7 @@ public class AttendanceService {
     public AttendanceRecordResponse checkIn() {
         Personnel personnel = personnelUtil.getCurrentPersonnel();
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
 
         AttendanceRecord attendanceRecord = attendanceRepository
                 .findByPersonnel_CodeAndDateForUpdate(personnel.getCode(), today)
@@ -64,7 +64,7 @@ public class AttendanceService {
 
         attendanceRecord.setCheckIn(OffsetDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
 
-        if(LocalTime.now().isAfter(SHIFT_START)) {
+        if(OffsetTime.now(ZoneId.of("Asia/Ho_Chi_Minh")).isAfter(SHIFT_START)) {
             attendanceRecord.setStatus(AttendanceStatus.LATE_ARRIVAL);
         }
 
@@ -100,7 +100,7 @@ public class AttendanceService {
     }
 
     public AttendanceStatusResponse getTodayStatusByPersonnelCode(String personnelCode) {
-        return attendanceRepository.findTodayRecordByPersonnelCode(personnelCode, LocalDate.now())
+        return attendanceRepository.findTodayRecordByPersonnelCode(personnelCode, LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")))
                 .map(attendanceRecord -> AttendanceStatusResponse.builder()
                         .status(attendanceRecord.getStatus())
                         .checkIn(attendanceRecord.getCheckIn())
@@ -122,7 +122,7 @@ public class AttendanceService {
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN')")
     public List<AttendanceRecordResponse> getTodayAttendanceSummary() {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         List<AttendanceRecord> records = attendanceRepository.findAllWithPersonnelByDate(today);
         return records.stream()
                 .map(attendanceMapper::toAttendanceRecordResponse)
@@ -173,7 +173,7 @@ public class AttendanceService {
     @PreAuthorize("hasRole('ADMIN')")
     public List<AttendanceRecordResponse> getAllRecordsByDateOrInterval(LocalDate start, LocalDate end) {
         // default to today if no dates provided
-        LocalDate effectiveStart = (start != null) ? start : LocalDate.now();
+        LocalDate effectiveStart = (start != null) ? start : LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         LocalDate effectiveEnd = (end != null) ? end : effectiveStart;
 
         List<AttendanceRecord> records = attendanceRepository.findAllWithPersonnelByDateBetween(effectiveStart, effectiveEnd);
@@ -323,7 +323,7 @@ public class AttendanceService {
 //        if (in != null) {
 //            if (out != null) {
 //                long totalMinutes = duration(in, out);
-//                if (overlapsLunch(in.toLocalTime(), out.toLocalTime())) {
+//                if (overlapsLunch(in.toOffsetTime(), out.toOffsetTime())) {
 //                    totalMinutes = Math.max(0, totalMinutes - LUNCH_MINUTES);
 //                    workHours = Math.round((totalMinutes / 60.0) * 100.0) / 100.0;
 //                }
@@ -364,12 +364,12 @@ public class AttendanceService {
 //        }
 //    }
 
-//    private boolean overlapsLunch(LocalTime start, LocalTime end) {
+//    private boolean overlapsLunch(OffsetTime start, OffsetTime end) {
 //        if (start == null || end == null) return false;
 //        if (end.isBefore(start)) return false;
 //        // Typical lunch window 12:00–13:00
-//        LocalTime LUNCH_START = LocalTime.NOON;
-//        LocalTime LUNCH_END   = LocalTime.NOON.plusHours(1);
+//        OffsetTime LUNCH_START = OffsetTime.NOON;
+//        OffsetTime LUNCH_END   = OffsetTime.NOON.plusHours(1);
 //        return !(end.isBefore(LUNCH_START) || start.isAfter(LUNCH_END));
 //    }
 

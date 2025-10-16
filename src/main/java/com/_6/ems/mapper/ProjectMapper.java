@@ -17,7 +17,7 @@ public interface ProjectMapper {
     @Mapping(target = "department", ignore = true)
     @Mapping(source = "max_participants", target = "maxParticipants")
     @Mapping(target = "participants", ignore = true)
-    @Mapping(target = "startDate", expression = "java(java.time.LocalDate.now())")
+    @Mapping(target = "startDate", expression = "java(java.time.LocalDate.now(java.time.ZoneId.of(\"Asia/Ho_Chi_Minh\")))")
     @Mapping(target = "endDate", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "employees", ignore = true)

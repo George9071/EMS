@@ -38,6 +38,7 @@ public class MeetingBooking {
     @Column(name = "end_time", nullable = false)
     private OffsetDateTime endTime;
 
+    @Builder.Default
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MeetingAttendee> attendees = new ArrayList<>();
 

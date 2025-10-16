@@ -25,7 +25,7 @@ public interface DepartmentMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "employeeNumber", constant = "0")
-    @Mapping(target = "establishmentDate", expression = "java(java.time.LocalDate.now())")
+    @Mapping(target = "establishmentDate", expression = "java(java.time.LocalDate.now(java.time.ZoneId.of(\"Asia/Ho_Chi_Minh\")))")
     @Mapping(target = "employees", ignore = true)
     @Mapping(target = "projects", ignore = true)
     @Mapping(target = "manager", ignore = true)

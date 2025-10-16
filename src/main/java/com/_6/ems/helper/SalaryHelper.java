@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.List;
 
 @Component
@@ -129,7 +130,7 @@ public class SalaryHelper {
     }
 
     public int getWorkingDaysInCurrentMonth() {
-        YearMonth ym = YearMonth.now();
+        YearMonth ym = YearMonth.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         LocalDate start = ym.atDay(1);
         LocalDate end = ym.atEndOfMonth();
 

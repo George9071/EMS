@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -49,7 +50,7 @@ public class SalaryService {
     final SalaryHelper salaryHelper;
 
     public void createMonthlySalary(Personnel personnel) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
 
         boolean exists = salaryRepository
                 .existsByPersonnelAndMonthAndYear(personnel, today.getMonthValue(), today.getYear());
@@ -57,8 +58,8 @@ public class SalaryService {
 
         Salary salary = Salary.builder()
                 .personnel(personnel)
-                .month(LocalDate.now().getMonthValue())
-                .year(LocalDate.now().getYear())
+                .month(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).getMonthValue())
+                .year(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")).getYear())
                 .build();
 
         if(personnel.getAccount().getRole() == Role.EMPLOYEE) {
@@ -71,7 +72,7 @@ public class SalaryService {
     }
 
     public void calculateSalary(Personnel personnel) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
         int year = today.getYear();
         int month = today.getMonthValue();
 

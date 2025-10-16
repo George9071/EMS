@@ -1,6 +1,7 @@
 package com._6.ems.service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -117,7 +118,7 @@ public class ProjectService {
         project.setStatus(newStatus);
 
         if (newStatus == ProjectStatus.DEVELOPED) {
-            project.setEndDate(LocalDate.now());
+            project.setEndDate(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")));
         }
 
         return projectMapper.toProjectResponse(projectRepository.save(project));

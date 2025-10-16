@@ -1,6 +1,7 @@
 package com._6.ems.service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 import com._6.ems.dto.request.ManagerCreationRequest;
@@ -60,7 +61,7 @@ public class ManagerService {
         Manager manager = Manager.builder()
                 .informationRecord(personnel)
                 .department(department)
-                .manageDate(LocalDate.now())
+                .manageDate(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")))
                 .build();
 
         try {

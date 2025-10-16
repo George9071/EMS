@@ -1,6 +1,7 @@
 package com._6.ems.controller;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 import com._6.ems.dto.response.*;
@@ -181,7 +182,7 @@ public class AttendanceController {
             @RequestParam(required = false) Integer year) {
 
         if (month == null || year == null) {
-            LocalDate now = LocalDate.now();
+            LocalDate now = LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh"));
             month = month != null ? month : now.getMonthValue();
             year = year != null ? year : now.getYear();
         }

@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 
@@ -16,7 +17,7 @@ public class DobValidator implements ConstraintValidator<DobConstraint, LocalDat
         if (Objects.isNull(date))
             return true;
 
-        long years = ChronoUnit.YEARS.between(date, LocalDate.now());
+        long years = ChronoUnit.YEARS.between(date, LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")));
 
         return years >= min;
     }
