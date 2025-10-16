@@ -19,15 +19,32 @@ public class CloudinaryUtil {
 
     private final Cloudinary cloudinary;
 
-    private final  List<String> ALLOWED_EXTENSIONS = List.of("pdf", "docx", "txt", "png", "csv", "jfif", "png", "jpeg", "jpg");
+    private final List<String> ALLOWED_EXTENSIONS = List.of(
+            "pdf", "docx", "txt", "png", "csv", "jfif", "jpeg", "jpg"
+    );
 
-    private final  List<String> ALLOWED_CONTENT_TYPES = List.of(
+    private final List<String> ALLOWED_CONTENT_TYPES = List.of(
+            // PDF
             "application/pdf",
+
+            // Microsoft Word (.docx)
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+
+            // Plain text
             "text/plain",
+
+            // CSV
             "text/csv",
-            "image/pipeg",
+            "application/csv",
+
+            // Images
+            "image/png",
             "image/jpeg",
+            "image/pjpeg",   // progressive JPEG
+            "image/jpg",
+            "image/jfif",
+
+            // (optional) Fallback for unknown binary uploads
             "application/octet-stream"
     );
 
