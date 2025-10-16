@@ -7,10 +7,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,7 +39,7 @@ public interface AttendanceMapper {
         return records == null ? List.of() :
                 records.stream()
                         .map(this::toDTO)
-                        .collect(Collectors.toList());
+                        .toList();
     }
 
 
@@ -61,7 +58,9 @@ public interface AttendanceMapper {
 
     @Named("toOffsetTime")
     default OffsetTime toOffsetTime(java.time.OffsetDateTime dateTime) {
-        return dateTime == null ? null : dateTime.toOffsetTime();
+        return dateTime == null ? null : dateTime.atZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh"))
+                .toOffsetDateTime()
+                .toOffsetTime();
     }
 
     @Named("getDayOfWeekInEnglish")
