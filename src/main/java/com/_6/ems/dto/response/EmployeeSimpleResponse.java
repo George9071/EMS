@@ -15,5 +15,6 @@ public class EmployeeSimpleResponse {
     Gender gender;
     String email;
     String phone;
+    String position;
     String avatar;
 }

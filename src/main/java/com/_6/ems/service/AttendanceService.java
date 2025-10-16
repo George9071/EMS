@@ -39,7 +39,7 @@ public class AttendanceService {
     private static double standardWorkHours;
 
     private static final LocalTime SHIFT_START = LocalTime.of(9, 0);
-    private static final LocalTime SHIFT_END = LocalTime.of(18, 0);
+//    private static final LocalTime SHIFT_END = LocalTime.of(18, 0);
     private static final int LUNCH_MINUTES = 60;
 
     AttendanceRepository attendanceRepository;
@@ -142,16 +142,16 @@ public class AttendanceService {
 
         return records.stream()
                 .map(attendanceMapper::toAttendanceRecordResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN') or #code == authentication.name")
     public List<AttendanceRecordResponse> getAllRecordByEmployeeCode(String code) {
-        personnelRepository.findById(code)
+        Personnel personnel = personnelRepository.findById(code)
                 .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
 
-        return attendanceRepository.findAllByPersonnelCode(code)
+        return attendanceRepository.findAllByPersonnelCode(personnel.getCode())
                 .stream()
                 .map(attendanceMapper::toAttendanceRecordResponse)
                 .toList();
@@ -163,10 +163,10 @@ public class AttendanceService {
             String code,
             LocalDate start,
             LocalDate end) {
-        personnelRepository.findById(code)
+        Personnel personnel = personnelRepository.findById(code)
                 .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
 
-        return attendanceRepository.findAllByPersonnelCodeAndDateBetween(code, start, end)
+        return attendanceRepository.findAllByPersonnelCodeAndDateBetween(personnel.getCode(), start, end)
                 .stream()
                 .map(attendanceMapper::toAttendanceRecordResponse)
                 .toList();
@@ -221,7 +221,7 @@ public class AttendanceService {
 
         // group by employee code
         Map<String, List<AttendanceRecord>> data = records.stream()
-                .collect(Collectors.groupingBy(record -> record.getPersonnel().getCode()));
+                .collect(Collectors.groupingBy(attendanceRecord -> attendanceRecord.getPersonnel().getCode()));
 
         return data.entrySet().stream()
                 .map(entry -> {
@@ -265,30 +265,30 @@ public class AttendanceService {
 //        return Duration.between(start, end).toMinutes();
 //    }
 
-    private void checkLate(AttendanceRecord record) {
-        if (record.getCheckIn() == null) return;
+    private void checkLate(AttendanceRecord attendanceRecord) {
+        if (attendanceRecord.getCheckIn() == null) return;
         int late = Math.max(0, (int) Duration.between(
-                record.getDate().atTime(SHIFT_START),
-                record.getCheckIn()).toMinutes());
+                attendanceRecord.getDate().atTime(SHIFT_START),
+                attendanceRecord.getCheckIn()).toMinutes());
         boolean isLate = late > 0;
-        record.setIsLate(isLate);
-        record.setLateMinutes(isLate ? late : 0);
+        attendanceRecord.setIsLate(isLate);
+        attendanceRecord.setLateMinutes(isLate ? late : 0);
     }
 
-    private void classify(AttendanceRecord record) {
-        double hrs = record.getWorkHours() == null ? 0.0 : record.getWorkHours();
-        if (hrs > 9.0) record.setType(AttendanceType.OVERTIME);
-        else if (hrs >= 8.0) record.setType(AttendanceType.FULL_DAY);
-        else if (hrs >= 4.0) record.setType(AttendanceType.HALF_DAY);
-        else record.setType(AttendanceType.NOT_ENOUGH_HOURS);
+    private void classify(AttendanceRecord attendanceRecord) {
+        double hrs = attendanceRecord.getWorkHours() == null ? 0.0 : attendanceRecord.getWorkHours();
+        if (hrs > 9.0) attendanceRecord.setType(AttendanceType.OVERTIME);
+        else if (hrs >= 8.0) attendanceRecord.setType(AttendanceType.FULL_DAY);
+        else if (hrs >= 4.0) attendanceRecord.setType(AttendanceType.HALF_DAY);
+        else attendanceRecord.setType(AttendanceType.NOT_ENOUGH_HOURS);
     }
 
     // Calculate work hours from duration(check-in,check-out)
-    private void calculateWorkHours(AttendanceRecord record) {
-        if (record.getCheckIn() != null && record.getCheckOut() != null) {
+    private void calculateWorkHours(AttendanceRecord attendanceRecord) {
+        if (attendanceRecord.getCheckIn() != null && attendanceRecord.getCheckOut() != null) {
             Duration duration = Duration.between(
-                    record.getCheckIn(),
-                    record.getCheckOut()
+                    attendanceRecord.getCheckIn(),
+                    attendanceRecord.getCheckOut()
             );
 
             // skip lunch break
@@ -297,14 +297,14 @@ public class AttendanceService {
                     : duration.toMinutes() - LUNCH_MINUTES;
             double hours = totalMinutes / 60.0;
 
-            record.setWorkHours(Math.round(hours * 100.0) / 100.0);
+            attendanceRecord.setWorkHours(Math.round(hours * 100.0) / 100.0);
             // Check if not enough standard work hours
-            record.setNotEnoughHours(hours < standardWorkHours);
+            attendanceRecord.setNotEnoughHours(hours < standardWorkHours);
 
             if (hours < standardWorkHours) {
-                record.setMissingHours(standardWorkHours - hours);
+                attendanceRecord.setMissingHours(standardWorkHours - hours);
             } else {
-                record.setMissingHours(0.0);
+                attendanceRecord.setMissingHours(0.0);
             }
         }
     }

@@ -31,6 +31,7 @@ public interface EmployeeMapper {
     @Mapping(source = "informationRecord.email", target = "email")
     @Mapping(source = "informationRecord.phoneNumber", target = "phone")
     @Mapping(source = "informationRecord.avatar", target = "avatar")
+    @Mapping(source = "informationRecord.position", target = "position")
     EmployeeSimpleResponse toSimpleResponse(Employee employee);
 
     List<EmployeeSimpleResponse> toSimpleResponseList(List<Employee> employees);

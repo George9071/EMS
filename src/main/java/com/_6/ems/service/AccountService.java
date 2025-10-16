@@ -2,6 +2,7 @@ package com._6.ems.service;
 
 import java.util.List;
 
+import com._6.ems.dto.response.AccountResponse;
 import com._6.ems.enums.Role;
 import com._6.ems.exception.AppException;
 import com._6.ems.exception.ErrorCode;
@@ -55,9 +56,10 @@ public class AccountService {
     }
 
     @PostAuthorize("returnObject.username == authentication.name or hasRole('ADMIN')")
-    public Account getAccount(String accountId) {
-        return accountRepository.findById(accountId)
-            .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_EXISTED));
+    public AccountResponse getAccount(String accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new AppException(ErrorCode.ACCOUNT_NOT_EXISTED));
+        return accountMapper.toAccountResponse(account);
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('AUTHORIZE_ADMIN')")
