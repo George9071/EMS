@@ -174,7 +174,7 @@ public class PersonnelService {
                             .subject(notification.getSubject())
                             .content(notification.getContent())
                             .sendAt(notification.getSendAt())
-                            .sender(notification.getSender().getCode())
+                            .sender(notification.getSender() == null ? null : notification.getSender().getCode())
                             .isRead(recipient.isRead())
                             .build();
                 })
