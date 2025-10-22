@@ -11,11 +11,9 @@ import java.time.OffsetDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class NotiResponse {
+public class NotificationAdminResponse {
     String id;
     String subject;
     String content;
     OffsetDateTime sendAt;
-    String sender;
-    boolean isRead;
 }

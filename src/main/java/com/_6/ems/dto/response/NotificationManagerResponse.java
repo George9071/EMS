@@ -3,6 +3,7 @@ package com._6.ems.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Setter
@@ -11,9 +12,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class NotificationResponse {
+public class NotificationManagerResponse {
     String id;
-    String sender;
-    List<String> receivers;
-    String sendAt;
+    String subject;
+    String content;
+    OffsetDateTime sendAt;
+    List<String> recipients;
 }

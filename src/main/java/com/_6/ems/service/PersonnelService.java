@@ -3,7 +3,7 @@ package com._6.ems.service;
 import com._6.ems.dto.request.PersonnelCreationRequest;
 import com._6.ems.dto.request.PersonnelUpdateRequest;
 import com._6.ems.dto.request.UpdateSalaryRequest;
-import com._6.ems.dto.response.NotiResponse;
+import com._6.ems.dto.response.NotificationReceiverResponse;
 import com._6.ems.dto.response.PersonnelResponse;
 import com._6.ems.dto.response.PrivilegeResponse;
 import com._6.ems.entity.*;
@@ -156,7 +156,7 @@ public class PersonnelService {
         }
     }
 
-    public List<NotiResponse> getMyNoti() {
+    public List<NotificationReceiverResponse> getMyNoti() {
         String code = SecurityUtil.getCurrentUserCode();
 
         Personnel personnel = personnelRepository.findById(code)
@@ -169,7 +169,7 @@ public class PersonnelService {
         return recipients.stream()
                 .map(recipient -> {
                     Notification notification = recipient.getNotification();
-                    return NotiResponse.builder()
+                    return NotificationReceiverResponse.builder()
                             .id(notification.getId())
                             .subject(notification.getSubject())
                             .content(notification.getContent())
@@ -182,7 +182,7 @@ public class PersonnelService {
     }
 
     @Transactional
-    public NotiResponse markAsRead(String notificationId) {
+    public NotificationReceiverResponse markAsRead(String notificationId) {
         String userCode = SecurityUtil.getCurrentUserCode();
 
         Personnel personnel = personnelRepository.findById(userCode)
@@ -201,12 +201,12 @@ public class PersonnelService {
         }
 
         Notification notification = recipient.getNotification();
-        return NotiResponse.builder()
+        return NotificationReceiverResponse.builder()
                 .id(notification.getId())
                 .subject(notification.getSubject())
                 .content(notification.getContent())
                 .sendAt(notification.getSendAt())
-                .sender(notification.getSender().getCode())
+                .sender(notification.getSender() == null ? null : notification.getSender().getCode())
                 .isRead(recipient.isRead())
                 .build();
     }

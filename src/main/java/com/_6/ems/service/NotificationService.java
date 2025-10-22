@@ -2,7 +2,9 @@ package com._6.ems.service;
 
 import com._6.ems.dto.request.AdminNotificationRequest;
 import com._6.ems.dto.request.NotificationRequest;
-import com._6.ems.dto.response.NotificationResponse;
+import com._6.ems.dto.response.NotificationAdminResponse;
+import com._6.ems.dto.response.NotificationManagerResponse;
+import com._6.ems.dto.response.SendNotificationResponse;
 import com._6.ems.entity.*;
 import com._6.ems.enums.Role;
 import com._6.ems.exception.AppException;
@@ -10,14 +12,10 @@ import com._6.ems.exception.ErrorCode;
 import com._6.ems.mapper.NotificationMapper;
 import com._6.ems.repository.*;
 import com._6.ems.utils.SecurityUtil;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,7 +42,7 @@ public class NotificationService {
     NotificationRecipientRepository notificationRecipientRepository;
 
     @Transactional
-    public NotificationResponse sendNotification(NotificationRequest request) {
+    public SendNotificationResponse sendNotification(NotificationRequest request) {
         String code = SecurityUtil.getCurrentUserCode();
 
         Manager manager = managerRepository.findById(code)
@@ -88,7 +86,7 @@ public class NotificationService {
 
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
-    public NotificationResponse sendNotificationToAllExceptAdmin(AdminNotificationRequest request) {
+    public SendNotificationResponse sendNotificationToAllExceptAdmin(AdminNotificationRequest request) {
 
         if (!SecurityUtil.isCurrentUserAdmin()) {
             throw new AppException(ErrorCode.ONLY_ADMIN_CAN_SEND_GLOBAL_NOTIFICATION);
@@ -108,7 +106,6 @@ public class NotificationService {
                 .filter(Objects::nonNull)
                 .toList();
 
-        // 👉 Lưu Notification 1 lần
         Notification notification = Notification.builder()
                 .sender(null)
                 .subject(request.getSubject())
@@ -133,5 +130,52 @@ public class NotificationService {
         }
 
         return notificationMapper.toResponse(notification);
+    }
+
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<NotificationAdminResponse> getAllNotificationsAdminSent() {
+        List<Notification> allNotifications = notificationRepository.findAll().stream()
+                .filter(notification -> notification.getSender() == null)
+                .toList();
+        return  allNotifications
+                .stream()
+                .map(notificationMapper::toNotificationAdminResponse)
+                .toList();
+    }
+
+    @Transactional
+    @PreAuthorize("hasRole('MANAGER')")
+    public List<NotificationManagerResponse> getAllNotificationsByManager(){
+        String code = SecurityUtil.getCurrentUserCode();
+
+        List<Notification> notifications = notificationRepository.findBySender_Code(code);
+
+        return notifications.stream()
+                .map(notification -> NotificationManagerResponse.builder()
+                        .id(notification.getId())
+                        .subject(notification.getSubject())
+                        .content(notification.getContent())
+                        .sendAt(notification.getSendAt())
+                        .recipients(notification.getRecipients().stream()
+                                .map(r -> r.getId().getRecipientEmail())
+                                .toList())
+                        .build())
+                .toList();
+    }
+
+    @Transactional
+    public void deleteNotificationById(String notificationId) {
+        String code = SecurityUtil.getCurrentUserCode();
+
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOTIFICATION_NOT_FOUND));
+
+        if (!SecurityUtil.isCurrentUserAdmin() &&
+                (notification.getSender() == null || !notification.getSender().getCode().equals(code))) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        notificationRepository.delete(notification);
     }
 }

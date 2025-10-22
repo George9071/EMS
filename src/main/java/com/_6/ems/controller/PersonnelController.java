@@ -39,8 +39,8 @@ public class PersonnelController {
 
     @Operation(summary = "Get my notifications")
     @GetMapping("/notifications")
-    ApiResponse<List<NotiResponse>> getMyNotification(){
-        return ApiResponse.<List<NotiResponse>>builder()
+    ApiResponse<List<NotificationReceiverResponse>> getMyNotification(){
+        return ApiResponse.<List<NotificationReceiverResponse>>builder()
                 .result(personnelService.getMyNoti())
                 .build();
     }
@@ -66,9 +66,9 @@ public class PersonnelController {
 
     @Operation(summary = "Mark notification as read")
     @PostMapping("/notifications/{notificationId}")
-    public ApiResponse<NotiResponse> markAsRead(
+    public ApiResponse<NotificationReceiverResponse> markAsRead(
             @Parameter(description = "Notification ID") @PathVariable String notificationId) {
-        return ApiResponse.<NotiResponse>builder()
+        return ApiResponse.<NotificationReceiverResponse>builder()
                 .result(personnelService.markAsRead(notificationId))
                 .build();
     }
