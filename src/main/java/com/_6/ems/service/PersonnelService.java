@@ -316,6 +316,7 @@ public class PersonnelService {
     private void handleEmployee(Personnel personnel, PersonnelResponse response) {
         employeeRepository.findById(personnel.getCode()).ifPresent(employee -> {
             response.setDepartmentName(getDepartmentName(employee.getDepartment()));
+            response.setDepartmentId(employee.getDepartment() == null ? null : employee.getDepartment().getId());
             response.setTasks(employee.getTasks() != null
                     ? employee.getTasks().stream().map(taskMapper::toTaskResponse).toList()
                     : Collections.emptyList());
@@ -325,6 +326,7 @@ public class PersonnelService {
     private void handleManager(Personnel personnel, PersonnelResponse response) {
         managerRepository.findById(personnel.getCode()).ifPresent(manager -> {
             response.setDepartmentName(getDepartmentName(manager.getDepartment()));
+            response.setDepartmentId(manager.getDepartment() == null ? null : manager.getDepartment().getId());
             response.setTasks(Collections.emptyList());
         });
     }
