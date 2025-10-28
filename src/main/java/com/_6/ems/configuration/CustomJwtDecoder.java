@@ -30,28 +30,39 @@ public class CustomJwtDecoder implements JwtDecoder {
 
     private NimbusJwtDecoder nimbusJwtDecoder = null;
 
+    /**
+     * Decodes and validates a JWT token.
+     * @param token the JWT string to decode
+     * @return a {@link Jwt} object containing claims if valid
+     * @throws JwtException if the token is invalid or signature verification fails
+     */
     @Override
     public Jwt decode(String token) throws JwtException {
         try {
-            log.info("null");
+            // Perform external introspection
             var response = authenticationService.introspect(IntrospectRequest.builder()
                     .token(token)
                     .build());
 
-            if (!response.isValid())
-                throw new JwtException("Token invalid");
+            // If introspection fails, reject the token
+            if (!response.isValid()) throw new JwtException("Token invalid");
+
         } catch (JOSEException | ParseException e) {
             throw new JwtException(e.getMessage());
         }
 
+        // Lazily initialize the NimbusJwtDecoder if not already created
         if (Objects.isNull(nimbusJwtDecoder)) {
+            // Create an HMAC-SHA512 secret key for verifying the JWT signature
             SecretKeySpec secretKeySpec = new SecretKeySpec(signerKey.getBytes(), "HS512");
+
             nimbusJwtDecoder = NimbusJwtDecoder
                     .withSecretKey(secretKeySpec)
                     .macAlgorithm(MacAlgorithm.HS512)
                     .build();
         }
 
+        // Decode and verify the JWT token
         return nimbusJwtDecoder.decode(token);
     }
 }

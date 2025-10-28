@@ -21,6 +21,7 @@ import com._6.ems.utils.SecurityUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -34,22 +35,26 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PersonnelService {
 
+    /* Repository */
     PersonnelRepository personnelRepository;
     AccountRepository accountRepository;
     PrivilegeRepository privilegeRepository;
-    PersonnelMapper personnelMapper;
-    AccountService accountService;
-    CloudinaryUtil cloudinaryUtil;
-    NotificationRecipientRepository notificationRecipientRepository;
     EmployeeRepository employeeRepository;
     PrivilegeMapper privilegeMapper;
     ManagerRepository managerRepository;
-    TaskMapper taskMapper;
     DepartmentRepository departmentRepository;
+    NotificationRecipientRepository notificationRecipientRepository;
+
+    /* Mapper, Service, Util */
+    PersonnelMapper personnelMapper;
+    TaskMapper taskMapper;
+    AccountService accountService;
     SalaryService salaryService;
+    CloudinaryUtil cloudinaryUtil;
 
     @Transactional
     public PersonnelResponse createPersonnel(PersonnelCreationRequest request) {
@@ -107,9 +112,14 @@ public class PersonnelService {
 
     public PersonnelResponse getMyInfo() {
         var context = SecurityContextHolder.getContext();
-        String name = context.getAuthentication().getName();
 
-        Account account = accountRepository.findByUsername(name).orElseThrow(
+        log.info("principal: {}", context.getAuthentication().getName());
+        log.info("authorities: {}", context.getAuthentication().getAuthorities());
+
+        String accountId = context.getAuthentication().getName(); // "sub" claims
+        log.info("accountId: {}", accountId);
+
+        Account account = accountRepository.findById(accountId).orElseThrow(
                 () -> new AppException(ErrorCode.ACCOUNT_NOT_EXISTED));
 
         Personnel personnel = personnelRepository.findByAccount_Id(account.getId()).orElseThrow(
