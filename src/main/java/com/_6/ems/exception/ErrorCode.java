@@ -84,7 +84,10 @@ public enum ErrorCode {
     MEETING_ROOM_NOT_FOUND(8001, "Meeting room not found", HttpStatus.NOT_FOUND),
     MEETING_ROOM_CONFLICT(8002, "Meeting room is already booked for this time", HttpStatus.CONFLICT),
     MEETING_BOOKING_NOT_FOUND(8003, "Meeting booking not found", HttpStatus.NOT_FOUND),
-
+    UNAUTHORIZED_UPDATE_BOOKING(8020, "You are not authorized to update this booking", HttpStatus.FORBIDDEN),
+    UNAUTHORIZED_DELETE_BOOKING(8021, "You are not authorized to delete this booking", HttpStatus.FORBIDDEN),
+    MEETING_ROOM_NAME_EXISTED(8002, "Meeting room name already exists", HttpStatus.BAD_REQUEST),
+    MEETING_ROOM_HAS_FUTURE_BOOKINGS(8003, "Cannot delete room with future bookings", HttpStatus.BAD_REQUEST),
     // =====================================================
     // 9xxx - Privilege & Role
     // =====================================================
