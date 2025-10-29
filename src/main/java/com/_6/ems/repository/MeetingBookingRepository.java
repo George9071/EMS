@@ -73,4 +73,6 @@ public interface MeetingBookingRepository extends JpaRepository<MeetingBooking, 
     boolean existsFutureBookingsByRoomId(
             @Param("roomId") Long roomId,
             @Param("now") OffsetDateTime now);
+
+    void deleteByOrganizerCode(String organizerCode);
 }

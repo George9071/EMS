@@ -37,4 +37,12 @@ public interface DepartmentRepository extends JpaRepository<Department, Integer>
        LEFT JOIN FETCH m.informationRecord
     """)
     List<Department> findAllWithManagerDetails();
+
+    @Query("""
+    SELECT d FROM Department d
+    LEFT JOIN d.employees e
+    LEFT JOIN d.manager m
+    WHERE e.code = :code OR m.code = :code
+""")
+    Department findDepartmentByPersonnelCode(@Param("code") String code);
 }

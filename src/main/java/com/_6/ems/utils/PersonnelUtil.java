@@ -40,13 +40,6 @@ public class PersonnelUtil {
         String fullName = personnel.getLastName() + " " + personnel.getFirstName();
         String dateOfBirth = personnel.getDob().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
-        Employee employee = employeeRepository.findByCode(code)
-                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
-
-        Department department = departmentRepository.findById(employee.getDepartment().getId())
-                .orElseThrow(() -> new AppException(ErrorCode.DEPARTMENT_NOT_FOUND));
-
-        String departmentName = department.getName();
         String position = personnel.getPosition();
 
         return new PersonnelInfo(
@@ -56,43 +49,27 @@ public class PersonnelUtil {
                 personnel.getPhoneNumber(),
                 personnel.getCity(),
                 personnel.getStreet(),
-                departmentName,
                 position
         );
     }
 
-    // Method mới - batch loading để tránh N+1 query
     public Map<String, PersonnelInfo> getPersonnelInfoByCodes(Set<String> codes) {
         if (codes == null || codes.isEmpty()) {
             return Collections.emptyMap();
         }
 
-        // Batch load tất cả personnel
         List<Personnel> personnelList = personnelRepository.findByCodeIn(codes);
 
-        // Batch load tất cả employee với department (sử dụng fetch join)
-        List<Employee> employees = employeeRepository.findByCodeInWithDepartment(codes);
-
-        // Tạo map để truy xuất nhanh
-        Map<String, Personnel> personnelMap = personnelList.stream()
-                .collect(Collectors.toMap(Personnel::getCode, Function.identity()));
-
-        Map<String, Employee> employeeMap = employees.stream()
-                .collect(Collectors.toMap(Employee::getCode, Function.identity()));
-
-        // Build PersonnelInfo cho từng code
-        return codes.stream()
-                .filter(code -> personnelMap.containsKey(code) && employeeMap.containsKey(code))
+        return personnelList.stream()
                 .collect(Collectors.toMap(
-                        Function.identity(),
-                        code -> buildPersonnelInfo(personnelMap.get(code), employeeMap.get(code))
+                        Personnel::getCode,
+                        this::buildPersonnelInfo
                 ));
     }
 
-    private PersonnelInfo buildPersonnelInfo(Personnel personnel, Employee employee) {
+    private PersonnelInfo buildPersonnelInfo(Personnel personnel) {
         String fullName = personnel.getLastName() + " " + personnel.getFirstName();
-        String dateOfBirth = personnel.getDob().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        String departmentName = employee.getDepartment().getName();
+        String dateOfBirth = personnel.getDob() == null ? null : personnel.getDob().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         String position = personnel.getPosition();
 
         return new PersonnelInfo(
@@ -102,7 +79,6 @@ public class PersonnelUtil {
                 personnel.getPhoneNumber(),
                 personnel.getCity(),
                 personnel.getStreet(),
-                departmentName,
                 position
         );
     }

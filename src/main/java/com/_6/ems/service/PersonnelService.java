@@ -50,6 +50,7 @@ public class PersonnelService {
     TaskMapper taskMapper;
     DepartmentRepository departmentRepository;
     SalaryService salaryService;
+    MeetingBookingRepository meetingBookingRepository;
 
     @Transactional
     public PersonnelResponse createPersonnel(PersonnelCreationRequest request) {
@@ -96,7 +97,7 @@ public class PersonnelService {
                 employee.setDepartment(null);
                 departmentRepository.save(department);
             }
-
+            meetingBookingRepository.deleteByOrganizerCode(code);
             employeeRepository.delete(employee);
         });
 

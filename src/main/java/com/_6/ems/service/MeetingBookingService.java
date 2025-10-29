@@ -3,12 +3,14 @@ package com._6.ems.service;
 import com._6.ems.dto.request.BookingRequest;
 import com._6.ems.dto.request.MeetingInvitation;
 import com._6.ems.dto.response.MeetingBookingResponse;
+import com._6.ems.entity.Department;
 import com._6.ems.entity.MeetingAttendee;
 import com._6.ems.entity.MeetingBooking;
 import com._6.ems.entity.MeetingRoom;
 import com._6.ems.exception.AppException;
 import com._6.ems.exception.ErrorCode;
 import com._6.ems.record.PersonnelInfo;
+import com._6.ems.repository.DepartmentRepository;
 import com._6.ems.repository.MeetingBookingRepository;
 import com._6.ems.repository.MeetingRoomRepository;
 import com._6.ems.utils.PersonnelUtil;
@@ -35,6 +37,7 @@ public class MeetingBookingService {
     private final PersonnelUtil personnelUtil;
     private final MeetingRoomRepository meetingRoomRepository;
     private final EmailService emailService;
+    private final DepartmentRepository departmentRepository;
 
     @Transactional
     public MeetingBookingResponse createBooking(BookingRequest request) {
@@ -226,7 +229,8 @@ public class MeetingBookingService {
         ).collect(Collectors.toSet());
 
         Map<String, PersonnelInfo> personnelMap = personnelUtil.getPersonnelInfoByCodes(allCodes);
-        PersonnelInfo organizer = personnelMap.get(booking.getOrganizerCode());
+
+        Department department = departmentRepository.findDepartmentByPersonnelCode(booking.getOrganizerCode());
 
         MeetingRoom meetingRoom = meetingRoomRepository.findById(booking.getRoomId())
                 .orElseThrow(() -> new AppException(ErrorCode.MEETING_ROOM_NOT_FOUND));
@@ -240,8 +244,8 @@ public class MeetingBookingService {
         return MeetingInvitation.builder()
                 .meetingTitle(booking.getTitle())
                 .meetingDescription(booking.getDescription())
-                .organizer(organizer.fullName())
-                .organizerDepartment(organizer.departmentName())
+                .organizer(personnelMap.get(booking.getOrganizerCode()).fullName())
+                .organizerDepartment(department.getName())
                 .startTime(booking.getStartTime())
                 .endTime(booking.getEndTime())
                 .roomName(meetingRoom.getName())
