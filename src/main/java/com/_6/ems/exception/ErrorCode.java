@@ -19,7 +19,7 @@ public enum ErrorCode {
     UNAUTHENTICATED(1001, "Unauthenticated", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1002, "You do not have permission", HttpStatus.FORBIDDEN),
     ACCESS_DENIED(1003, "Access denied", HttpStatus.FORBIDDEN),
-    INVALID_KEY(1004, "Invalid API key", HttpStatus.BAD_REQUEST),
+    INVALID_KEY(1004, "Nhập input sai", HttpStatus.BAD_REQUEST),
 
     // =====================================================
     // 11xx - Account & User
