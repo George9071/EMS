@@ -4,10 +4,12 @@ import com._6.ems.dto.request.PersonnelCreationRequest;
 import com._6.ems.dto.request.PersonnelUpdateRequest;
 import com._6.ems.dto.request.UpdateSalaryRequest;
 import com._6.ems.dto.response.NotificationReceiverResponse;
+import com._6.ems.dto.response.PageResponse;
 import com._6.ems.dto.response.PersonnelResponse;
 import com._6.ems.dto.response.PrivilegeResponse;
 import com._6.ems.entity.*;
 import com._6.ems.entity.compositeKey.NotificationRecipientId;
+import com._6.ems.enums.Gender;
 import com._6.ems.enums.PrivilegeName;
 import com._6.ems.enums.Role;
 import com._6.ems.exception.AppException;
@@ -21,6 +23,11 @@ import com._6.ems.utils.SecurityUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -213,11 +220,79 @@ public class PersonnelService {
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('AUTHORIZE_ADMIN')")
-    public List<PersonnelResponse> getAllPersonnel() {
-        return personnelRepository.findAll()
-                .stream()
-                .map(this::toPersonnelResponse)
-                .toList();
+    public PageResponse<PersonnelResponse> getAllPersonnel(
+            int page, int size, String role, Gender gender, Integer department) {
+
+        if (page < 1) page = 1;
+        if (size < 1) size = 10;
+
+        Sort sort = Sort.by("code").ascending();
+        Pageable pageable = PageRequest.of(page - 1, size, sort);
+
+        Specification<Personnel> spec = Specification.where(null);
+
+        if (role != null && !role.isEmpty()) {
+            if (role.equalsIgnoreCase("EMPLOYEE")) {
+                spec = spec.and((root, query, cb) -> {
+                    var subquery = query.subquery(String.class);
+                    var employeeRoot = subquery.from(com._6.ems.entity.Employee.class);
+                    subquery.select(employeeRoot.get("code"));
+
+                    if (department != null) {
+                        subquery.where(cb.equal(
+                                employeeRoot.get("department").get("id"), department));
+                    }
+
+                    return cb.in(root.get("code")).value(subquery);
+                });
+            } else if (role.equalsIgnoreCase("MANAGER")) {
+                spec = spec.and((root, query, cb) -> {
+                    var subquery = query.subquery(String.class);
+                    var managerRoot = subquery.from(com._6.ems.entity.Manager.class);
+                    subquery.select(managerRoot.get("code"));
+
+                    if (department != null) {
+                        subquery.where(cb.equal(
+                                managerRoot.get("department").get("id"), department));
+                    }
+
+                    return cb.in(root.get("code")).value(subquery);
+                });
+            }
+        } else if (department != null) {
+            spec = spec.and((root, query, cb) -> {
+                var employeeSubquery = query.subquery(String.class);
+                var employeeRoot = employeeSubquery.from(com._6.ems.entity.Employee.class);
+                employeeSubquery.select(employeeRoot.get("code"))
+                        .where(cb.equal(employeeRoot.get("department").get("id"), department));
+
+                var managerSubquery = query.subquery(String.class);
+                var managerRoot = managerSubquery.from(com._6.ems.entity.Manager.class);
+                managerSubquery.select(managerRoot.get("code"))
+                        .where(cb.equal(managerRoot.get("department").get("id"), department));
+
+                return cb.or(
+                        cb.in(root.get("code")).value(employeeSubquery),
+                        cb.in(root.get("code")).value(managerSubquery)
+                );
+            });
+        }
+
+        if (gender != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("gender"), gender));
+        }
+
+        Page<Personnel> personnelPage = personnelRepository.findAll(spec, pageable);
+
+        return PageResponse.<PersonnelResponse>builder()
+                .currentPage(page)
+                .pageSize(personnelPage.getSize())
+                .totalPages(personnelPage.getTotalPages())
+                .totalElements(personnelPage.getTotalElements())
+                .data(personnelPage.getContent().stream()
+                        .map(this::toPersonnelResponse)
+                        .toList())
+                .build();
     }
 
     @Transactional

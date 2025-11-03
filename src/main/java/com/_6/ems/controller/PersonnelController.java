@@ -4,11 +4,13 @@ import com._6.ems.dto.request.PersonnelCreationRequest;
 import com._6.ems.dto.request.PersonnelUpdateRequest;
 import com._6.ems.dto.request.UpdateSalaryRequest;
 import com._6.ems.dto.response.*;
+import com._6.ems.enums.Gender;
 import com._6.ems.service.PersonnelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -47,10 +49,27 @@ public class PersonnelController {
 
     @Operation(summary = "List all personnel details")
     @GetMapping("/all")
-    public ApiResponse<List<PersonnelResponse>> getAllPersonnel() {
-        List<PersonnelResponse> personnel = personnelService.getAllPersonnel();
-        return ApiResponse.<List<PersonnelResponse>>builder()
-                .result(personnel)
+    public ApiResponse<PageResponse<PersonnelResponse>> getAllPersonnel(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+
+            @Parameter(
+                    description = "Role of the user. Accepted values: EMPLOYEE or MANAGER"
+            )
+            @RequestParam(required = false)
+            @Pattern(regexp = "EMPLOYEE|MANAGER", message = "EMPLOYEE hoặc MANAGER thôi nhé ae")
+            String role,
+
+            @RequestParam(required = false) Gender gender,
+
+            @Parameter(
+                    description = "Mã phòng ban"
+            )
+            @RequestParam(required = false) Integer department
+    ) {
+        var result = personnelService.getAllPersonnel(page, size, role, gender, department);
+        return ApiResponse.<PageResponse<PersonnelResponse>>builder()
+                .result(result)
                 .build();
     }
 
