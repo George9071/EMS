@@ -221,7 +221,7 @@ public class PersonnelService {
 
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('AUTHORIZE_ADMIN')")
     public PageResponse<PersonnelResponse> getAllPersonnel(
-            int page, int size, String role, Gender gender, Integer department) {
+            int page, int size, String role, Gender gender, Integer department, String keyword) {
 
         if (page < 1) page = 1;
         if (size < 1) size = 10;
@@ -280,6 +280,14 @@ public class PersonnelService {
 
         if (gender != null) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("gender"), gender));
+        }
+
+        if (keyword != null && !keyword.isEmpty()) {
+            String likePattern = "%" + keyword.toLowerCase() + "%";
+            spec = spec.and((root, query, cb) -> cb.or(
+                    cb.like(cb.lower(root.get("firstName")), likePattern),
+                    cb.like(cb.lower(root.get("lastName")), likePattern)
+            ));
         }
 
         Page<Personnel> personnelPage = personnelRepository.findAll(spec, pageable);

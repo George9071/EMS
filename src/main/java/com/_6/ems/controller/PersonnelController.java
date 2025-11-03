@@ -53,6 +53,8 @@ public class PersonnelController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
 
+            @RequestParam(required = false) String keyword,
+
             @Parameter(
                     description = "Role of the user. Accepted values: EMPLOYEE or MANAGER"
             )
@@ -67,7 +69,7 @@ public class PersonnelController {
             )
             @RequestParam(required = false) Integer department
     ) {
-        var result = personnelService.getAllPersonnel(page, size, role, gender, department);
+        var result = personnelService.getAllPersonnel(page, size, role, gender, department, keyword);
         return ApiResponse.<PageResponse<PersonnelResponse>>builder()
                 .result(result)
                 .build();
