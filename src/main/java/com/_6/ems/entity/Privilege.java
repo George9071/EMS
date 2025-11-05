@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Getter
@@ -24,6 +25,11 @@ public class Privilege {
     @Column(name = "description")
     String description;
 
-    @ManyToMany
-    Set<Permission> permissions;
+    @OneToMany(mappedBy = "privilege", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    Set<PrivilegePermission> permissions = new HashSet<>();
+
+    @ManyToMany(mappedBy = "privileges")
+    @Builder.Default
+    Set<Personnel> personnels = new HashSet<>();
 }

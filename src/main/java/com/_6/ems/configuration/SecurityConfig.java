@@ -18,6 +18,15 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.web.SecurityFilterChain;
 import lombok.RequiredArgsConstructor;
 
+
+/**
+ * Main Spring Security configuration class.
+
+ * This configuration secures the application using JWT-based authentication
+ * for API endpoints, integrates a custom JWT decoder, and defines public
+ * (unauthenticated) routes.
+ * It also enables method-level security annotations like @PreAuthorize and @Secured.</p>
+ */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -25,13 +34,10 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
     private final String[] PUBLIC_ENDPOINTS = {
-            "/auth/login",
-            "/auth/introspect",
-            "/auth/logout",
-            "/accounts"
+            "/auth/**",
     };
 
-    CustomJwtDecoder customJwtDecoder;
+    private final CustomJwtDecoder customJwtDecoder;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
@@ -42,35 +48,55 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
-                .cors(Customizer.withDefaults())
-                .csrf(AbstractHttpConfigurer::disable)
+                .cors(Customizer.withDefaults()) // Enable CORS using default configuration
+                .csrf(AbstractHttpConfigurer::disable) // Disable CSRF since this is a stateless REST API
+
+                // Define authorization rules for incoming HTTP requests
                 .authorizeHttpRequests(request ->
                     request
+                            // Allow OPTIONS requests for preflight CORS checks
                             .requestMatchers(HttpMethod.OPTIONS, PUBLIC_ENDPOINTS).permitAll()
+
+                            // Allow POST requests for authentication-related endpoints
                             .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+
+                            // Allow unauthenticated access to certain public routes
                             .requestMatchers("/api/auth/**").permitAll()
                             .requestMatchers("/swagger-ui/**").permitAll()
                             .requestMatchers("/v3/api-docs/**").permitAll()
                             .requestMatchers("/api-docs/**").permitAll()
                             .requestMatchers("/swagger-ui.html").permitAll()
                             .requestMatchers("/actuator/health").permitAll()
+
+                            // All other endpoints require authentication
                             .anyRequest().authenticated()
                 )
 
-                .oauth2ResourceServer(oauth2 ->
-                        oauth2.jwt(jwtConfigurer ->
-                                 jwtConfigurer
-                                        .decoder(customJwtDecoder)
-                                        .jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                                .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+                // Configure JWT-based OAuth2 Resource Server authentication
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .decoder(customJwtDecoder)
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+
+                        // Define custom entry point for unauthorized access handling
+                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
         );
         return httpSecurity.build();
     }
 
+    /**
+     * Configures the {@link JwtAuthenticationConverter} to transform JWT claims
+     * into {@link org.springframework.security.core.GrantedAuthority} objects.
+     *
+     * @return a configured {@link JwtAuthenticationConverter} bean
+     */
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+
+        // Use a custom converter to extract roles/authorities from JWT claims
         converter.setJwtGrantedAuthoritiesConverter(new CustomJwtGrantedAuthoritiesConverter());
+
         return converter;
     }
 

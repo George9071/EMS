@@ -15,9 +15,9 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DepartmentResponse {
-    int department_id;
-    String department_name;
-    int employee_number;
-    LocalDate establishment_date;
+    int departmentId;
+    String departmentName;
+    int employeeNumber;
+    LocalDate establishmentDate;
     ManagerResponse manager;
 }

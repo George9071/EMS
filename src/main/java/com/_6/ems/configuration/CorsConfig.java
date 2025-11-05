@@ -15,8 +15,10 @@ public class CorsConfig {
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-
+        // Allow sending credentials (e.g., cookies, authorization headers) along with cross-origin requests
         config.setAllowCredentials(true);
+
+        // Specify the allowed origins (domains) that can access the API
         config.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:5174",
@@ -28,6 +30,7 @@ public class CorsConfig {
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
+        // Register the CORS configuration for all API paths (/**)
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
 

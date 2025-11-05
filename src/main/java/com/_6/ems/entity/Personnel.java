@@ -81,7 +81,18 @@ public class Personnel {
     @JoinColumn(name = "account_id", referencedColumnName = "id")
     Account account;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "personnel_privileges",
+            joinColumns = @JoinColumn(
+                    name = "personnel_code",
+                    referencedColumnName = "code"
+            ),
+            inverseJoinColumns = @JoinColumn(
+                    name = "privileges_name",
+                    referencedColumnName = "name"
+            )
+    )
     @Enumerated(EnumType.STRING)
     Set<Privilege> privileges;
 

@@ -1,13 +1,18 @@
 package com._6.ems.controller;
 
 import com._6.ems.dto.request.DepartmentCreationRequest;
+import com._6.ems.dto.request.DepartmentUpdateRequest;
 import com._6.ems.dto.response.EmployeeInDepartmentResponse;
+import com._6.ems.dto.response.PageMeta;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import com._6.ems.dto.response.ApiResponse;
@@ -58,6 +63,26 @@ public class DepartmentController {
                 .build();
     }
 
+    @GetMapping("/all-v2")
+    @Operation(summary = "List all departments with pagination")
+    public ApiResponse<PageMeta<DepartmentResponse>> getAllDepartments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+        PageMeta<DepartmentResponse> departments = departmentService.getAllDepartments(pageable);
+
+        return ApiResponse.<PageMeta<DepartmentResponse>>builder()
+                .result(departments)
+                .build();
+    }
+
     @Operation(summary = "Get employees in a department")
     @GetMapping("/{id}/employees")
     public ApiResponse<EmployeeInDepartmentResponse> getEmployeesInDepartment(
@@ -79,7 +104,6 @@ public class DepartmentController {
                 .result(departmentService.assignManagerToDepartment(departmentId, managerId))
                 .build();
     }
-
 
     @Operation(summary = "Remove manager from department")
     @PutMapping("/{departmentId}/manager/remove")
@@ -108,6 +132,26 @@ public class DepartmentController {
         departmentService.removeEmployeeFromDepartment(departmentId, employeeCode);
         return ApiResponse.<EmployeeInDepartmentResponse>builder()
                 .result(departmentService.getAllEmployeesInDepartment(departmentId))
+                .build();
+    }
+
+    @Operation(summary = "Update department information")
+    @PatchMapping("/{id}")
+    public ApiResponse<DepartmentResponse> updateDepartment(
+            @Parameter(description = "DepartmentId") @PathVariable int id,
+            @RequestBody DepartmentUpdateRequest request){
+        return ApiResponse.<DepartmentResponse>builder()
+                .result(departmentService.updateDepartment(id, request))
+                .build();
+    }
+
+    @Operation(summary = "Delete department")
+    @DeleteMapping("/{id}")
+    public ApiResponse<String> deleteDepartment(
+            @Parameter(description = "DepartmentId") @PathVariable int id){
+        departmentService.deleteDepartment(id);
+        return ApiResponse.<String>builder()
+                .result("Department with id: " + id + " has been deleted")
                 .build();
     }
 }

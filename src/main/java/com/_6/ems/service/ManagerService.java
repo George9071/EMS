@@ -54,9 +54,7 @@ public class ManagerService {
         Department department = departmentRepository.findById(Integer.parseInt(request.getDepartment_id()))
                 .orElseThrow(() -> new AppException(ErrorCode.MANAGER_NOT_FOUND));
 
-        if (department.getManager() != null) {
-            throw new AppException(ErrorCode.DEPARTMENT_ALREADY_ASSIGNED);
-        }
+        if (department.getManager() != null) throw new AppException(ErrorCode.DEPARTMENT_ALREADY_HAS_MANAGER);
 
         Manager manager = Manager.builder()
                 .informationRecord(personnel)

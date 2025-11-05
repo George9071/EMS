@@ -6,7 +6,6 @@ import com._6.ems.dto.request.UpdateSalaryRequest;
 import com._6.ems.dto.response.NotificationReceiverResponse;
 import com._6.ems.dto.response.PageResponse;
 import com._6.ems.dto.response.PersonnelResponse;
-import com._6.ems.dto.response.PrivilegeResponse;
 import com._6.ems.entity.*;
 import com._6.ems.entity.compositeKey.NotificationRecipientId;
 import com._6.ems.enums.Gender;
@@ -15,14 +14,13 @@ import com._6.ems.enums.Role;
 import com._6.ems.exception.AppException;
 import com._6.ems.exception.ErrorCode;
 import com._6.ems.mapper.PersonnelMapper;
-import com._6.ems.mapper.PrivilegeMapper;
-import com._6.ems.mapper.TaskMapper;
 import com._6.ems.repository.*;
 import com._6.ems.utils.CloudinaryUtil;
 import com._6.ems.utils.SecurityUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,29 +32,33 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PersonnelService {
 
+    /* Repository */
     PersonnelRepository personnelRepository;
     AccountRepository accountRepository;
     PrivilegeRepository privilegeRepository;
+    EmployeeRepository employeeRepository;
+    ManagerRepository managerRepository;
+    DepartmentRepository departmentRepository;
+    NotificationRecipientRepository notificationRecipientRepository;
+
+    /* Mapper, Service, Util */
     PersonnelMapper personnelMapper;
     AccountService accountService;
-    CloudinaryUtil cloudinaryUtil;
-    NotificationRecipientRepository notificationRecipientRepository;
-    EmployeeRepository employeeRepository;
-    PrivilegeMapper privilegeMapper;
-    ManagerRepository managerRepository;
-    TaskMapper taskMapper;
-    DepartmentRepository departmentRepository;
     SalaryService salaryService;
+    CloudinaryUtil cloudinaryUtil;
     MeetingBookingRepository meetingBookingRepository;
 
     @Transactional
@@ -67,24 +69,19 @@ public class PersonnelService {
         personnel.setCode(generateCode(request.getFirstName(), request.getLastName(), request.getDob()));
         personnel.setAccount(account);
 
-        Privilege privilege = privilegeRepository.findByName(PrivilegeName.valueOf("EMPLOYEE"))
+        Role accountRole = request.getAccountCreationRequest().getRole();
+        Privilege privilege = privilegeRepository.findByName(PrivilegeName.valueOf(accountRole.toString()))
                 .orElseThrow(() -> new AppException(ErrorCode.PRIVILEGE_NOT_FOUND));
+
         personnel.setPosition(request.getPosition());
         personnel.setPrivileges(Set.of(privilege));
 
         personnel = personnelRepository.save(personnel);
 
-        if(request.getAccountCreationRequest().getRole() == Role.EMPLOYEE) {
-            employeeRepository.save(
-                    Employee.builder()
-                            .informationRecord(personnel)
-                    .build());
-        } else if(request.getAccountCreationRequest().getRole() == Role.MANAGER) {
-            managerRepository.save(
-                    Manager.builder()
-                            .informationRecord(personnel)
-                            .build()
-            );
+        if (accountRole == Role.EMPLOYEE) {
+            employeeRepository.save(Employee.builder().informationRecord(personnel).build());
+        } else if(accountRole == Role.MANAGER) {
+            managerRepository.save(Manager.builder().informationRecord(personnel).build());
         }
 
         salaryService.createMonthlySalary(personnel);
@@ -113,11 +110,17 @@ public class PersonnelService {
         personnelRepository.delete(personnel);
     }
 
+    @PreAuthorize("hasRole('EMPOYEE') or hasRole('MANAGER')")
     public PersonnelResponse getMyInfo() {
         var context = SecurityContextHolder.getContext();
-        String name = context.getAuthentication().getName();
 
-        Account account = accountRepository.findByUsername(name).orElseThrow(
+        log.info("principal: {}", context.getAuthentication().getName());
+        log.info("authorities: {}", context.getAuthentication().getAuthorities());
+
+        String accountId = context.getAuthentication().getName(); // "sub" claims
+        log.info("accountId: {}", accountId);
+
+        Account account = accountRepository.findById(accountId).orElseThrow(
                 () -> new AppException(ErrorCode.ACCOUNT_NOT_EXISTED));
 
         Personnel personnel = personnelRepository.findByAccount_Id(account.getId()).orElseThrow(
@@ -309,26 +312,32 @@ public class PersonnelService {
         Personnel personnel = personnelRepository.findByCode(code)
                 .orElseThrow(() -> new AppException(ErrorCode.PERSONNEL_NOT_FOUND));
 
-        if(request.getBasicSalary() != null) {
+        boolean changed = false;
+
+        if (request.getBasicSalary() != null) {
             personnel.setBasicSalary(request.getBasicSalary());
+            changed = true;
         }
-        if(request.getBonus() != null) {
+        if (request.getBonus() != null) {
             personnel.setBonus(request.getBonus());
+            changed = true;
         }
-        if(request.getAllowance() != null) {
+        if (request.getAllowance() != null) {
             personnel.setAllowance(request.getAllowance());
+            changed = true;
         }
-        if(request.getKpiPenalty() != null) {
+        if (request.getKpiPenalty() != null) {
             personnel.setKpiPenalty(request.getKpiPenalty());
+            changed = true;
         }
 
         personnel = personnelRepository.save(personnel);
-
-        salaryService.calculateSalary(personnel);
+        if (changed) salaryService.calculateSalary(personnel);
 
         return toPersonnelResponse(personnel);
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasAuthority('AUTHORIZE_ADMIN')")
     public PersonnelResponse getPersonnelByCode(String code) {
         Personnel personnel = personnelRepository.findById(code)
                 .orElseThrow(() -> new AppException(ErrorCode.PROFILE_NOT_EXISTED));
@@ -350,74 +359,23 @@ public class PersonnelService {
     }
 
     public PersonnelResponse toPersonnelResponse(Personnel personnel) {
-        if (personnel == null) {
-            return null;
-        }
-
-        PersonnelResponse response = PersonnelResponse.builder()
-                .code(personnel.getCode())
-                .firstName(personnel.getFirstName())
-                .lastName(personnel.getLastName())
-                .gender(personnel.getGender() != null ? personnel.getGender().name() : null)
-                .avatarUrl(personnel.getAvatar())
-                .dob(personnel.getDob())
-                .email(personnel.getEmail())
-                .phoneNumber(personnel.getPhoneNumber())
-                .city(personnel.getCity())
-                .street(personnel.getStreet())
-                .description(personnel.getDescription())
-                .skills(personnel.getSkills())
-                .position(personnel.getPosition())
-                .accountId(personnel.getAccount() != null ? personnel.getAccount().getId() : null)
-                .role(personnel.getAccount() != null ? personnel.getAccount().getRole().name() : null)
-                .basicSalary(personnel.getBasicSalary())
-                .build();
-
-        Set<PrivilegeResponse> privilegeResponses = personnel.getPrivileges() != null
-                ? personnel.getPrivileges().stream()
-                .map(privilegeMapper::toPrivilegeResponse)
-                .collect(Collectors.toSet())
-                : Collections.emptySet();
-        response.setPrivileges(privilegeResponses);
-
-        setDepartmentNameAndTasks(personnel, response);
-
-        return response;
-    }
-
-    private void setDepartmentNameAndTasks(Personnel personnel, PersonnelResponse response) {
-        Role role = (personnel.getAccount() != null) ? personnel.getAccount().getRole() : null;
-        if (role == null) return;
+        PersonnelResponse response = personnelMapper.toPersonnelResponse(personnel);
+        Role role = personnel.getAccount().getRole();
 
         switch (role) {
-            case EMPLOYEE -> handleEmployee(personnel, response);
-            case MANAGER -> handleManager(personnel, response);
-            case ADMIN -> handleAdmin(response);
+            case EMPLOYEE -> employeeRepository.findById(personnel.getCode()).ifPresent(employee -> {
+                response.setDepartmentName(getDepartmentName(employee.getDepartment()));
+                response.setDepartmentId(employee.getDepartment() == null ? null : employee.getDepartment().getId());
+            });
+            case MANAGER -> managerRepository.findById(personnel.getCode()).ifPresent(manager -> {
+                response.setDepartmentName(getDepartmentName(manager.getDepartment()));
+                response.setDepartmentId(manager.getDepartment() == null ? null : manager.getDepartment().getId());
+            });
+            case ADMIN -> response.setDepartmentName("Administration");
             default -> { /* do nothing */ }
         }
-    }
 
-    private void handleEmployee(Personnel personnel, PersonnelResponse response) {
-        employeeRepository.findById(personnel.getCode()).ifPresent(employee -> {
-            response.setDepartmentName(getDepartmentName(employee.getDepartment()));
-            response.setDepartmentId(employee.getDepartment() == null ? null : employee.getDepartment().getId());
-            response.setTasks(employee.getTasks() != null
-                    ? employee.getTasks().stream().map(taskMapper::toTaskResponse).toList()
-                    : Collections.emptyList());
-        });
-    }
-
-    private void handleManager(Personnel personnel, PersonnelResponse response) {
-        managerRepository.findById(personnel.getCode()).ifPresent(manager -> {
-            response.setDepartmentName(getDepartmentName(manager.getDepartment()));
-            response.setDepartmentId(manager.getDepartment() == null ? null : manager.getDepartment().getId());
-            response.setTasks(Collections.emptyList());
-        });
-    }
-
-    private void handleAdmin(PersonnelResponse response) {
-        response.setDepartmentName("Administration");
-        response.setTasks(Collections.emptyList());
+        return response;
     }
 
     private String getDepartmentName(Department department) {
