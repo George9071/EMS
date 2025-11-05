@@ -1,11 +1,10 @@
 package com._6.ems.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import java.util.Set;
+import java.util.HashSet;
 
 @Getter
 @Setter
@@ -22,4 +21,8 @@ public class Permission {
 
     @Column(name = "description")
     String description;
+
+    @OneToMany(mappedBy = "permission", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    Set<PrivilegePermission> privileges = new HashSet<>();
 }

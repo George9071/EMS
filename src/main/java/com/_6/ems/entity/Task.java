@@ -50,7 +50,9 @@ public class Task {
     @Column(name = "last_status_change")
     OffsetDateTime lastStatusChange;
 
-    @OneToMany(mappedBy = "task", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
+    @OneToMany(mappedBy = "task",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
     @Builder.Default
     List<File> files = new ArrayList<>();
 }

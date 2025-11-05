@@ -1,14 +1,13 @@
 package com._6.ems.entity;
 
-import com._6.ems.enums.Gender;
 import com._6.ems.enums.ProjectStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -46,8 +45,9 @@ public class Project {
     @Enumerated(EnumType.STRING)
     ProjectStatus status;
 
-    @ManyToMany(mappedBy = "projects", fetch = FetchType.LAZY)
-    List<Employee> employees;
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    List<EmployeeProject> employees = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)

@@ -32,14 +32,9 @@ public class Employee {
     @JoinColumn(name = "department_id", referencedColumnName = "id" )
     Department department;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "employee_in_project",
-            joinColumns = @JoinColumn(name = "employee_code"),
-            inverseJoinColumns = @JoinColumn(name = "project_id")
-    )
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    List<Project> projects = new ArrayList<>();
+    List<EmployeeProject> projects = new ArrayList<>();
 
     @OneToMany(mappedBy = "assignee", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @Builder.Default
