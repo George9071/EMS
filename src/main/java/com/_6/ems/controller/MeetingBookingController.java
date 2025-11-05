@@ -1,6 +1,7 @@
 package com._6.ems.controller;
 
 import com._6.ems.dto.request.BookingRequest;
+import com._6.ems.dto.request.CancelReason;
 import com._6.ems.dto.response.ApiResponse;
 import com._6.ems.dto.response.MeetingBookingResponse;
 import com._6.ems.service.MeetingBookingService;
@@ -35,5 +36,32 @@ public class MeetingBookingController {
     public ResponseEntity<ApiResponse<List<MeetingBookingResponse>>> getMyBookings() {
         List<MeetingBookingResponse> bookings = bookingService.getMyBookings();
         return ResponseEntity.ok(ApiResponse.success(bookings));
+    }
+
+    @GetMapping
+    public ApiResponse<List<MeetingBookingResponse>> getAllBookings() {
+        return ApiResponse.<List<MeetingBookingResponse>>builder()
+                .result(bookingService.getAllBookings())
+                .build();
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<MeetingBookingResponse> updateBooking(
+            @PathVariable Long id,
+            @RequestBody @Valid BookingRequest request) {
+        return ApiResponse.<MeetingBookingResponse>builder()
+                .result(bookingService.updateBooking(id, request))
+                .build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> deleteBooking(
+            @PathVariable Long id,
+            @RequestBody CancelReason cancelReason
+    ) {
+        bookingService.deleteBooking(id, cancelReason.getReason());
+        return ApiResponse.<Void>builder()
+                .message("Booking deleted successfully")
+                .build();
     }
 }

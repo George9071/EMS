@@ -21,12 +21,11 @@ public class BookingRequest {
     @Size(max = 1000)
     private String description;
 
-    @Schema(type = "string", example = "2025-10-05T09:30:00")
+    @Schema(type = "string", example = "2025-10-05T09:30:00+07:00")
     @NotNull
-    @Future
     private OffsetDateTime startTime;
 
-    @Schema(type = "string", example = "2025-10-05T09:30:00")
+    @Schema(type = "string", example = "2025-10-05T10:30:00+07:00")
     @NotNull
     private OffsetDateTime endTime;
 

@@ -57,6 +57,70 @@ public class EmailService {
     }
 
     @Async
+    public void sendMeetingCancellationNotification(MeetingInvitation meetingInvitation, String cancelReason) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(meetingInvitation.getRecipientEmails().toArray(new String[0]));
+            helper.setSubject("Thông báo hủy cuộc họp: " + meetingInvitation.getMeetingTitle());
+            helper.setFrom("bk.manarate@gmail.com");
+
+            Context context = new Context();
+            context.setVariable("meetingTitle", meetingInvitation.getMeetingTitle());
+            context.setVariable("meetingDescription", meetingInvitation.getMeetingDescription());
+            context.setVariable("organizer", meetingInvitation.getOrganizer());
+            context.setVariable("organizerDepartment", meetingInvitation.getOrganizerDepartment());
+            context.setVariable("startTime", meetingInvitation.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")));
+            context.setVariable("endTime", meetingInvitation.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")));
+            context.setVariable("roomName", meetingInvitation.getRoomName());
+            context.setVariable("roomLocation", meetingInvitation.getRoomLocation());
+            context.setVariable("duration", calculateDuration(meetingInvitation.getStartTime(), meetingInvitation.getEndTime()));
+            context.setVariable("capacity", meetingInvitation.getCapacity());
+
+            context.setVariable("cancellationReason", cancelReason);
+
+            String htmlContent = templateEngine.process("meeting-cancellation", context);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new AppException(ErrorCode.EMAIL_EXCEPTION);
+        }
+    }
+
+    @Async
+    public void sendMeetingUpdateNotification(MeetingInvitation meetingInvitation) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(meetingInvitation.getRecipientEmails().toArray(new String[0]));
+            helper.setSubject("Thông báo thay đổi cuộc họp: " + meetingInvitation.getMeetingTitle());
+            helper.setFrom("bk.manarate@gmail.com");
+
+            Context context = new Context();
+            context.setVariable("meetingTitle", meetingInvitation.getMeetingTitle());
+            context.setVariable("meetingDescription", meetingInvitation.getMeetingDescription());
+            context.setVariable("organizer", meetingInvitation.getOrganizer());
+            context.setVariable("organizerDepartment", meetingInvitation.getOrganizerDepartment());
+            context.setVariable("startTime", meetingInvitation.getStartTime().format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")));
+            context.setVariable("endTime", meetingInvitation.getEndTime().format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")));
+            context.setVariable("roomName", meetingInvitation.getRoomName());
+            context.setVariable("roomLocation", meetingInvitation.getRoomLocation());
+            context.setVariable("duration", calculateDuration(meetingInvitation.getStartTime(), meetingInvitation.getEndTime()));
+            context.setVariable("capacity", meetingInvitation.getCapacity());
+
+            String htmlContent = templateEngine.process("meeting-invitation", context);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new AppException(ErrorCode.EMAIL_EXCEPTION);
+        }
+    }
+
+    @Async
     public void sendEmail(String to, String subject, String content) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();

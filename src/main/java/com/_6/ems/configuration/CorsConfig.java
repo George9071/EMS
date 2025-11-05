@@ -25,9 +25,8 @@ public class CorsConfig {
                 "http://localhost:5175",
                 "http://localhost:5176",
                 "https://software-project-management-human-r.vercel.app/",
-                "https://software-project-management-human-r-nu.vercel.app/"));
-
-        // Allow all headers to be sent in CORS requests (e.g., Authorization, Content-Type, etc.)
+                "https://software-project-management-human-r-nu.vercel.app/",
+                "https://software-project-management-human-r-hazel.vercel.app/"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 

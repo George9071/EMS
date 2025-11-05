@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Thông báo hủy cuộc họp</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #333;">
+<h2 style="color: #d9534f;">Cuộc họp đã bị hủy</h2>
+
+<p>Xin chào,</p>
+<p>Cuộc họp <strong th:text="${meetingTitle}"></strong> do
+    <strong th:text="${organizer}"></strong>
+    (phòng ban: <span th:text="${organizerDepartment}"></span>)
+    tổ chức đã bị hủy.</p>
+
+<p><strong>Thời gian dự kiến:</strong>
+    <span th:text="${startTime}"></span> –
+    <span th:text="${endTime}"></span></p>
+
+<p><strong>Phòng họp:</strong>
+    <span th:text="${roomName}"></span>
+    (<span th:text="${roomLocation}"></span>)</p>
+
+<p><strong>Lý do hủy:</strong>
+    <span th:text="${cancellationReason}"></span></p>
+
+<br>
+<p>Rất mong quý vị thông cảm và cập nhật lại lịch họp khi cần thiết.</p>
+<p>Trân trọng,</p>
+<p><em>Hệ thống quản lý phòng họp - BK Manarate</em></p>
+</body>
+</html>

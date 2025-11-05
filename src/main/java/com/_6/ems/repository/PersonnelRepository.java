@@ -5,6 +5,13 @@ import com._6.ems.entity.Privilege;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,4 +20,6 @@ public interface PersonnelRepository extends JpaRepository<Personnel, String> {
     Optional<Personnel> findByAccount_Id(String accountId);
     Optional<Personnel> findByCode(String code);
     List<Personnel> findAllByPrivilegesContains(Privilege privilege);
+    List<Personnel> findByCodeIn(Collection<String> codes);
+    Page<Personnel> findAll(Specification<Personnel> specification, Pageable pageable);
 }

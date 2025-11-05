@@ -25,6 +25,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -78,7 +79,9 @@ public class NotificationService {
         notificationRepository.save(notification);
 
         for (String email : emails) {
-            emailService.sendEmail(email, request.getSubject(), request.getMessage());
+            CompletableFuture.runAsync(() -> {
+                emailService.sendEmail(email, request.getSubject(), request.getMessage());
+            });
         }
 
         return notificationMapper.toResponse(notification);
@@ -126,7 +129,9 @@ public class NotificationService {
         notificationRepository.save(notification);
 
         for (String email : emails) {
-            emailService.sendEmail(email, request.getSubject(), request.getMessage());
+            CompletableFuture.runAsync(() -> {
+                emailService.sendEmail(email, request.getSubject(), request.getMessage());
+            });
         }
 
         return notificationMapper.toResponse(notification);

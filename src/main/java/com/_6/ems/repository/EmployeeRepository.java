@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import com._6.ems.entity.Employee;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,4 +25,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, String>{
         WHERE e.department.id = :deptId
     """)
     Page<Employee> findByDepartmentId(@Param("deptId") int deptId, Pageable pageable);
+    @Query("SELECT e FROM Employee e " +
+            "JOIN FETCH e.department " +
+            "WHERE e.code IN :codes")
+    List<Employee> findByCodeInWithDepartment(@Param("codes") Collection<String> codes);
 }

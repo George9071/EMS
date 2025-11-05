@@ -18,4 +18,6 @@ public interface MeetingRoomRepository extends JpaRepository<MeetingRoom, Long> 
             @Param("startTime") OffsetDateTime startTime,
             @Param("endTime") OffsetDateTime endTime
     );
+
+    boolean existsByName(String name);
 }
