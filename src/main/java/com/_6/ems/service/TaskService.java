@@ -3,6 +3,7 @@ package com._6.ems.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com._6.ems.exception.AppException;
 import com._6.ems.mapper.TaskMapper;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -19,13 +20,13 @@ import com._6.ems.repository.EmployeeRepository;
 import com._6.ems.repository.ProjectRepository;
 import com._6.ems.repository.TaskRepository;
 
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
+
+import static com._6.ems.exception.ErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@Transactional
 public class TaskService {
 
     TaskRepository taskRepository;
@@ -36,7 +37,7 @@ public class TaskService {
     @Transactional
     public TaskResponse createTask(TaskCreationRequest request) {
         Project project = projectRepository.findById(request.getProject_id())
-                .orElseThrow(() -> new EntityNotFoundException("Project not found"));
+                .orElseThrow(() -> new AppException(PROJECT_NOT_FOUND));
 
         Task task = taskMapper.toTask(request);
         task.setProject(project);
@@ -44,8 +45,14 @@ public class TaskService {
         task.setAssignee(null);
 
         if (request.getAssignee_code() != null && !request.getAssignee_code().isEmpty()) {
-            employeeRepository.findById(request.getAssignee_code())
-                    .ifPresent(task::setAssignee);
+            Employee assignee = employeeRepository.findById(request.getAssignee_code())
+                    .orElseThrow(() -> new AppException(EMPLOYEE_NOT_FOUND));
+
+            boolean isMember = assignee.getProjects().stream()
+                    .anyMatch(assignment -> assignment.getProject().equals(project));
+
+            if (!isMember) throw new AppException(EMPLOYEE_NOT_BELONG_TO_PROJECT);
+            task.setAssignee(assignee);
         }
 
         return taskMapper.toTaskResponse(taskRepository.save(task));
@@ -53,7 +60,7 @@ public class TaskService {
 
     public TaskResponse getTaskById(String taskId) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+                .orElseThrow(() -> new AppException(TASK_NOT_FOUND));
         return taskMapper.toTaskResponse(task);
     }
 
@@ -72,18 +79,18 @@ public class TaskService {
     @Transactional
     public TaskResponse assignTask(String taskId, String code) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+                .orElseThrow(() -> new AppException(TASK_NOT_FOUND));
 
-        if (task.getStatus() == TaskStatus.COMPLETED) {
-            throw new IllegalStateException("Cannot assign a completed task.");
-        }
+        if (task.getStatus() == TaskStatus.COMPLETED) throw new AppException(ASSIGN_COMPLETED_TASK);
 
         Employee assignee = employeeRepository.findById(code)
-                .orElseThrow(() -> new EntityNotFoundException("Employee not found"));
+                .orElseThrow(() -> new AppException(EMPLOYEE_NOT_FOUND));
 
-        if (!assignee.getProjects().contains(task.getProject())) {
-            throw new IllegalArgumentException("Employee is not part of the project.");
-        }
+        // Check if the employee is assigned to the task's project
+        boolean isMember = assignee.getProjects().stream()
+                .anyMatch(project -> project.getProject().equals(task.getProject()));
+
+        if (!isMember) throw new AppException(EMPLOYEE_NOT_BELONG_TO_PROJECT);
 
         Employee currentAssignee = task.getAssignee();
 
@@ -99,13 +106,16 @@ public class TaskService {
     @Transactional
     public TaskResponse updateTaskStatus(String taskId, TaskStatus status) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
+                .orElseThrow(() -> new AppException(TASK_NOT_FOUND));
 
-        if (status == TaskStatus.COMPLETED && task.getStatus() != TaskStatus.COMPLETED) {
-            if (task.getAssignee() != null) {
-                Employee assignee = task.getAssignee();
-                assignee.setTaskCompleted(assignee.getTaskCompleted() + 1);
-            }
+        TaskStatus oldStatus = task.getStatus();
+        Employee assignee = task.getAssignee();
+
+        if (status == TaskStatus.COMPLETED && oldStatus != status) {
+            if (assignee != null) assignee.setTaskCompleted(assignee.getTaskCompleted() + 1);
+        }
+        else if (status != TaskStatus.COMPLETED && oldStatus == TaskStatus.COMPLETED) {
+            if (assignee != null) assignee.setTaskCompleted(Math.max(0, assignee.getTaskCompleted() - 1));
         }
 
         task.setStatus(status);

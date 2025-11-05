@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import com._6.ems.dto.request.ProjectCreationRequest;
 import com._6.ems.dto.response.EmployeeResponse;
 import com._6.ems.dto.response.EmployeeSimpleResponse;
+import com._6.ems.entity.EmployeeProject;
 import com._6.ems.enums.ProjectStatus;
 import com._6.ems.exception.AppException;
 import com._6.ems.exception.ErrorCode;
@@ -68,9 +69,14 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new AppException(ErrorCode.PROJECT_NOT_FOUND));
 
-        return employeeMapper.toSimpleResponseList(project.getEmployees());
+        List<Employee> employees = project.getEmployees().stream()
+                .map(EmployeeProject::getEmployee)
+                .collect(Collectors.toList());
+
+        return employeeMapper.toSimpleResponseList(employees);
     }
 
+    @Transactional
     public List<EmployeeSimpleResponse> assignEmployeeToProject(String projectId, String employeeCode) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new AppException(ErrorCode.PROJECT_NOT_FOUND));
@@ -78,21 +84,35 @@ public class ProjectService {
         Employee employee = employeeRepository.findById(employeeCode)
                 .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
-        if (project.getParticipants() >= project.getMaxParticipants()) {
-            throw new AppException(ErrorCode.EXCEED_MAX_PARTICIPANTS);
-        }
+        boolean assigned = project.getEmployees().stream()
+                .anyMatch(member -> member.getEmployee().equals(employee));
 
-        if (!project.getEmployees().contains(employee)) {
-            project.getEmployees().add(employee);
-            employee.getProjects().add(project);
+        if (!assigned) {
+            if (project.getParticipants() >= project.getMaxParticipants()) {
+                throw new AppException(ErrorCode.EXCEED_MAX_PARTICIPANTS);
+            }
+
+            EmployeeProject member = EmployeeProject.builder()
+                    .employee(employee)
+                    .project(project)
+                    .joinedAt(LocalDate.now(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    .build();
+
+            project.getEmployees().add(member);
             project.setParticipants(project.getParticipants() + 1);
+            employee.getProjects().add(member);
         }
 
         projectRepository.save(project);
 
-        return employeeMapper.toSimpleResponseList(project.getEmployees());
+        List<Employee> employees = project.getEmployees().stream()
+                .map(EmployeeProject::getEmployee)
+                .collect(Collectors.toList());
+
+        return employeeMapper.toSimpleResponseList(employees);
     }
 
+    @Transactional
     public List<EmployeeSimpleResponse> removeEmployeeFromProject(String projectId, String employeeCode) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new AppException(ErrorCode.PROJECT_NOT_FOUND));
@@ -100,15 +120,24 @@ public class ProjectService {
         Employee employee = employeeRepository.findById(employeeCode)
                 .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
-        if (project.getEmployees().remove(employee)) {
-            employee.getProjects().remove(project);
-            project.getEmployees().remove(employee);
+        EmployeeProject member = project.getEmployees().stream()
+                .filter(assignment -> assignment.getEmployee().equals(employee))
+                .findFirst()
+                .orElse(null);
+
+        if (member != null) {
+            project.getEmployees().remove(member);
+            employee.getProjects().remove(member);
             project.setParticipants(project.getEmployees().size());
         }
 
         projectRepository.save(project);
 
-        return employeeMapper.toSimpleResponseList(project.getEmployees());
+        List<Employee> employees = project.getEmployees().stream()
+                .map(EmployeeProject::getEmployee)
+                .collect(Collectors.toList());
+
+        return employeeMapper.toSimpleResponseList(employees);
     }
 
     public ProjectResponse updateProjectStatus(String projectId, ProjectStatus newStatus) {

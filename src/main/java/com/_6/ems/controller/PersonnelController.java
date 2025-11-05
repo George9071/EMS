@@ -13,6 +13,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -47,10 +51,11 @@ public class PersonnelController {
 
     @Operation(summary = "List all personnel details")
     @GetMapping("/all")
-    public ApiResponse<List<PersonnelResponse>> getAllPersonnel() {
-        List<PersonnelResponse> personnel = personnelService.getAllPersonnel();
-        return ApiResponse.<List<PersonnelResponse>>builder()
-                .result(personnel)
+    public ApiResponse<Page<PersonnelResponse>> getAllPersonnel(
+            @PageableDefault(size = 20, sort = "code", direction = Sort.Direction.ASC) Pageable pageable) {
+        Page<PersonnelResponse> responses = personnelService.getAllPersonnel(pageable);
+        return ApiResponse.<Page<PersonnelResponse>>builder()
+                .result(responses)
                 .build();
     }
 
