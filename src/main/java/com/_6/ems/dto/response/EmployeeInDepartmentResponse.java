@@ -11,8 +11,8 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class EmployeeInDepartmentResponse {
-    String department_name;
-    int department_id;
+    String departmentName;
+    int departmentId;
     List<EmployeeSimpleResponse> employees;
     ManagerResponse manager;
 }

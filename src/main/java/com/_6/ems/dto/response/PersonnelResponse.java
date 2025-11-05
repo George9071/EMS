@@ -32,6 +32,4 @@ public class PersonnelResponse {
     String departmentName;
     Integer departmentId;
     Double basicSalary;
-    List<TaskResponse> tasks;
-    Set<PrivilegeResponse> privileges;
 }

@@ -41,6 +41,15 @@ public enum ErrorCode {
     PERSONNEL_NOT_FOUND(2001, "Personnel not found", HttpStatus.NOT_FOUND),
     EMPLOYEE_NOT_FOUND(2002, "Employee not found", HttpStatus.NOT_FOUND),
     MANAGER_NOT_FOUND(2003, "Manager not found", HttpStatus.NOT_FOUND),
+    MANAGER_ALREADY_ASSIGNED(
+            2003,
+            "This manager is already managing another department",
+            HttpStatus.BAD_REQUEST),
+    EMPLOYEE_ALREADY_ASSIGNED_TO_ANOTHER_DEPARTMENT(
+            2004,
+            "Employee already belong to another department",
+            HttpStatus.CONFLICT
+    ),
 
     // =====================================================
     // 3xxx - Attendance
@@ -55,15 +64,16 @@ public enum ErrorCode {
     // 4xxx - Department
     // =====================================================
     DEPARTMENT_NOT_FOUND(4001, "Department not found", HttpStatus.NOT_FOUND),
-    DEPARTMENT_ALREADY_ASSIGNED(4002, "Department already has a manager", HttpStatus.CONFLICT),
+    DEPARTMENT_ALREADY_HAS_MANAGER(4002, "Department already has a manager", HttpStatus.CONFLICT),
     EMPLOYEE_NOT_BELONG(4003, "Employee does not belong to this department", HttpStatus.BAD_REQUEST),
-
     // =====================================================
     // 5xxx - Project & Task
     // =====================================================
     PROJECT_NOT_FOUND(5001, "Project not found", HttpStatus.NOT_FOUND),
     EXCEED_MAX_PARTICIPANTS(5002, "Project participant limit exceeded", HttpStatus.CONFLICT),
     TASK_NOT_FOUND(5003, "Task not found", HttpStatus.NOT_FOUND),
+    ASSIGN_COMPLETED_TASK(5004, "Cannot assign a completed task.", HttpStatus.BAD_REQUEST),
+    EMPLOYEE_NOT_BELONG_TO_PROJECT(5005, "Employee is not part of the project", HttpStatus.BAD_REQUEST),
 
     // =====================================================
     // 6xxx - File & Media

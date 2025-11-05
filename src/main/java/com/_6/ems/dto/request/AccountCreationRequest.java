@@ -12,9 +12,9 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AccountCreationRequest {
-    @Size(min = 6, message = "USERNAME_INVALID, MUST BE AT LEAST 6 CHARACTERS")
+    @Size(min = 6, message = "USERNAME_INVALID")
     String username;
-    @Size(min = 8, message = "INVALID_PASSWORD, MUST BE AT LEAST 8 CHARACTERS")
+    @Size(min = 8, message = "INVALID_PASSWORD")
     String password;
 
     @Schema(description = "Vai trò của tài khoản", example = "EMPLOYEE",
