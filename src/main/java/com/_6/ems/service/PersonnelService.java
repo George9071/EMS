@@ -110,7 +110,7 @@ public class PersonnelService {
         personnelRepository.delete(personnel);
     }
 
-    @PreAuthorize("hasRole('EMPOYEE') or hasRole('MANAGER')")
+    @PreAuthorize("hasRole('EMPLOYEE') or hasRole('MANAGER')")
     public PersonnelResponse getMyInfo() {
         var context = SecurityContextHolder.getContext();
 
