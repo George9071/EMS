@@ -3,6 +3,7 @@ package com._6.ems.schedule;
 import com._6.ems.entity.AttendanceRecord;
 import com._6.ems.entity.Personnel;
 import com._6.ems.enums.AttendanceStatus;
+import com._6.ems.enums.AttendanceType;
 import com._6.ems.repository.AttendanceRepository;
 import com._6.ems.repository.PersonnelRepository;
 import jakarta.transaction.Transactional;
@@ -33,6 +34,7 @@ public class AttendanceScheduler {
                         .personnel(p)
                         .date(today)
                         .status(AttendanceStatus.ABSENT)
+                        .type(AttendanceType.ABSENT)
                         .build();
                 attendanceRepository.save(attendance);
             }
