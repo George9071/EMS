@@ -4,8 +4,10 @@ import com._6.ems.dto.request.MeetingRoomRequest;
 import com._6.ems.dto.response.ApiResponse;
 import com._6.ems.dto.response.MeetingRoomResponse;
 import com._6.ems.service.MeetingRoomService;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -33,8 +35,8 @@ public class MeetingRoomController {
 
     @GetMapping("/available-in-time")
     public ResponseEntity<ApiResponse<List<MeetingRoomResponse>>> getAvailableRoomsInTimeRange(
-            @RequestParam OffsetDateTime startTime,
-            @RequestParam OffsetDateTime endTime) {
+            @RequestParam @Parameter(example = "2025-01-01T00:00:00+07:00") OffsetDateTime startTime,
+            @RequestParam @Parameter(example = "2026-01-01T00:00:00+07:00") OffsetDateTime endTime) {
         List<MeetingRoomResponse> rooms = roomService
                 .getAvailableRoomsInTimeRange(startTime, endTime);
         return ResponseEntity.ok(ApiResponse.success(rooms));
