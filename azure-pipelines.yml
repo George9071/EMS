@@ -1,0 +1,16 @@
+trigger:
+  - main
+
+pool:
+  name: "Default"
+
+steps:
+  - script: echo "✅ Hello from $(Agent.Name)! The agent is working fine."
+    displayName: "Test agent connection"
+
+  - script: |
+      echo "Current directory:"
+      pwd
+      echo "Listing files:"
+      ls -la
+    displayName: "Check workspace contents"
