@@ -70,6 +70,7 @@ public class MeetingRoomService {
                 .location(request.getLocation())
                 .capacity(request.getCapacity())
                 .equipment(request.getEquipment())
+                .isWorking(request.isWorking())
                 .build();
 
         MeetingRoom savedRoom = meetingRoomRepository.save(room);
@@ -90,6 +91,7 @@ public class MeetingRoomService {
         room.setLocation(request.getLocation());
         room.setCapacity(request.getCapacity());
         room.setEquipment(request.getEquipment());
+        room.setWorking(request.isWorking());
 
         MeetingRoom updatedRoom = meetingRoomRepository.save(room);
 
@@ -126,6 +128,7 @@ public class MeetingRoomService {
                 .capacity(room.getCapacity())
                 .equipment(room.getEquipment())
                 .isAvailable(!isBooked)
+                .isWorking(room.isWorking())
                 .build();
     }
 }

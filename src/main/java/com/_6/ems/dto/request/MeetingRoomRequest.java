@@ -24,4 +24,7 @@ public class MeetingRoomRequest {
 
     @Size(max = 500, message = "Equipment description must not exceed 500 characters")
     private String equipment;
+
+    @NotNull
+    private boolean isWorking;
 }
