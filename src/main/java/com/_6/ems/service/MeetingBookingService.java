@@ -48,9 +48,11 @@ public class MeetingBookingService {
             throw new AppException(ErrorCode.MEETING_ROOM_CONFLICT);
         }
 
+        String organizerCode = SecurityUtil.isCurrentUserAdmin() ? "ADMIN" : SecurityUtil.getCurrentUserCode();
+
         MeetingBooking booking = MeetingBooking.builder()
                 .roomId(request.getRoomId())
-                .organizerCode(request.getOrganizerCode())
+                .organizerCode(organizerCode)
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .startTime(request.getStartTime())
@@ -205,7 +207,7 @@ public class MeetingBookingService {
 
         String currentUserCode = SecurityUtil.getCurrentUserCode();
 
-        if (!booking.getOrganizerCode().equals(currentUserCode)) {
+        if (!booking.getOrganizerCode().equals(currentUserCode) && !SecurityUtil.isCurrentUserAdmin()) {
             throw new AppException(ErrorCode.UNAUTHORIZED_DELETE_BOOKING);
         }
 
@@ -258,7 +260,9 @@ public class MeetingBookingService {
     private MeetingBookingResponse convertToDTO(MeetingBooking meetingBooking,
                                                 Map<String, PersonnelInfo> personnelMap,
                                                 Map<Long, MeetingRoom> roomMap) {
-        String fullName = personnelMap.get(meetingBooking.getOrganizerCode()).fullName();
+        String fullName = "ADMIN";
+        if(!meetingBooking.getOrganizerCode().equals("ADMIN"))
+            fullName = personnelMap.get(meetingBooking.getOrganizerCode()).fullName();
 
         List<String> attendeeNames = meetingBooking.getAttendees()
                 .stream()
