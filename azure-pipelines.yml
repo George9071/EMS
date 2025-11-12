@@ -4,6 +4,10 @@ trigger:
 pool:
   name: "Default"
 
+variables:
+  MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
+  MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+
 steps:
   - script: echo "✅ Hello from $(Agent.Name)! The agent is working fine."
     displayName: "Test agent connection"
@@ -14,3 +18,94 @@ steps:
       echo "Listing files:"
       ls -la
     displayName: "Check workspace contents"
+
+  # Install Java JDK 21
+  - task: JavaToolInstaller@0
+    inputs:
+      versionSpec: '21'
+      jdkArchitectureOption: 'x64'
+      jdkSourceOption: 'PreInstalled'
+    displayName: 'Set up JDK 21'
+
+  # Cache Maven dependencies
+  - task: Cache@2
+    inputs:
+      key: 'maven | "$(Agent.OS)" | **/pom.xml'
+      restoreKeys: |
+        maven | "$(Agent.OS)"
+        maven
+      path: $(MAVEN_CACHE_FOLDER)
+    displayName: 'Cache Maven packages'
+
+  # Clean and compile
+  - task: Maven@3
+    inputs:
+      mavenPomFile: 'pom.xml'
+      goals: 'clean compile'
+      options: '-B'
+      publishJUnitResults: false
+      javaHomeOption: 'JDKVersion'
+      jdkVersionOption: '1.21'
+      mavenVersionOption: 'Default'
+      mavenOptions: '$(MAVEN_OPTS)'
+      mavenAuthenticateFeed: false
+    displayName: 'Maven Clean & Compile'
+
+  # Run tests
+  - task: Maven@3
+    inputs:
+      mavenPomFile: 'pom.xml'
+      goals: 'test'
+      options: '-B'
+      publishJUnitResults: true
+      testResultsFiles: '**/surefire-reports/TEST-*.xml'
+      javaHomeOption: 'JDKVersion'
+      jdkVersionOption: '1.21'
+      mavenVersionOption: 'Default'
+      mavenOptions: '$(MAVEN_OPTS)'
+      mavenAuthenticateFeed: false
+    displayName: 'Run Unit Tests'
+
+  # Publish test results
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '**/surefire-reports/TEST-*.xml'
+      searchFolder: '$(System.DefaultWorkingDirectory)'
+      mergeTestResults: true
+      failTaskOnFailedTests: true
+      testRunTitle: 'Unit Tests'
+    displayName: 'Publish Test Results'
+
+  # Publish code coverage results
+  - task: PublishCodeCoverageResults@1
+    condition: succeededOrFailed()
+    inputs:
+      codeCoverageTool: 'JaCoCo'
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/target/site/jacoco/jacoco.xml'
+      reportDirectory: '$(System.DefaultWorkingDirectory)/target/site/jacoco'
+      failIfCoverageEmpty: false
+    displayName: 'Publish Code Coverage'
+
+  # Package application
+  - task: Maven@3
+    inputs:
+      mavenPomFile: 'pom.xml'
+      goals: 'package -DskipTests'
+      options: '-B'
+      publishJUnitResults: false
+      javaHomeOption: 'JDKVersion'
+      jdkVersionOption: '1.21'
+      mavenVersionOption: 'Default'
+      mavenOptions: '$(MAVEN_OPTS)'
+      mavenAuthenticateFeed: false
+    displayName: 'Maven Package'
+
+  # Publish build artifacts
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(System.DefaultWorkingDirectory)/target/*.jar'
+      ArtifactName: 'drop'
+      publishLocation: 'Container'
+    displayName: 'Publish Artifacts'
