@@ -177,7 +177,6 @@ class NotificationServiceTest {
             when(notificationRepository.save(any(Notification.class))).thenReturn(notification);
             when(notificationMapper.toResponse(any(Notification.class)))
                     .thenReturn(SendNotificationResponse.builder().build());
-            doNothing().when(emailService).sendEmail(anyString(), anyString(), anyString());
 
             // WHEN
             SendNotificationResponse response = notificationService.sendNotificationToAllExceptAdmin(adminRequest);
