@@ -11,9 +11,6 @@ public class BookingRequest {
     @NotNull
     private Long roomId;
 
-    @NotNull
-    private String organizerCode;
-
     @NotBlank
     @Size(max = 200)
     private String title;

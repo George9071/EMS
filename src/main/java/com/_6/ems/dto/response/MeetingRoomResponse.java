@@ -16,4 +16,5 @@ public class MeetingRoomResponse {
     private Boolean isAvailable;
     private String location;
     private String equipment;
+    private boolean isWorking;
 }

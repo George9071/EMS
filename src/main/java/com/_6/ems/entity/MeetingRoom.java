@@ -27,4 +27,7 @@ public class MeetingRoom {
 
     @Column(name = "equipment")
     private String equipment;
+
+    @Column(name = "is_working")
+    private boolean isWorking;
 }
