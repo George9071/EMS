@@ -93,10 +93,10 @@ steps:
       mvn package -DskipTests -B
     displayName: 'Maven Package'
 
-  # Publish build artifacts
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(System.DefaultWorkingDirectory)/target/*.jar'
-      ArtifactName: 'drop'
-      publishLocation: 'Container'
-    displayName: 'Publish Artifacts'
+  # # Publish build artifacts
+  # - task: PublishBuildArtifacts@1
+  #   inputs:
+  #     PathtoPublish: '$(System.DefaultWorkingDirectory)/target/*.jar'
+  #     ArtifactName: 'drop'
+  #     publishLocation: 'Container'
+  #   displayName: 'Publish Artifacts'
