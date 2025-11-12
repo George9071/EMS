@@ -51,6 +51,8 @@ public enum ErrorCode {
             HttpStatus.CONFLICT
     ),
 
+    MANAGER_NOT_MANAGE(2005, "Manager does not manage any department", HttpStatus.NOT_FOUND),
+
     // =====================================================
     // 3xxx - Attendance
     // =====================================================
