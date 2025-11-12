@@ -19,13 +19,29 @@ steps:
       ls -la
     displayName: "Check workspace contents"
 
-  # Install Java JDK 21
-  - task: JavaToolInstaller@0
-    inputs:
-      versionSpec: '21'
-      jdkArchitectureOption: 'x64'
-      jdkSourceOption: 'PreInstalled'
-    displayName: 'Set up JDK 21'
+  # Check/Install Maven and Java on Ubuntu
+  - bash: |
+      echo "Checking Java and Maven installation..."
+      if ! command -v java &> /dev/null; then
+        echo "Java not found. Installing OpenJDK 21..."
+        sudo apt-get update
+        sudo apt-get install -y openjdk-21-jdk
+      else
+        echo "Java is already installed"
+      fi
+      
+      if ! command -v mvn &> /dev/null; then
+        echo "Maven not found. Installing Maven..."
+        sudo apt-get install -y maven
+      else
+        echo "Maven is already installed"
+      fi
+      
+      echo "Java version:"
+      java -version
+      echo "Maven version:"
+      mvn -version
+    displayName: 'Setup Java & Maven'
 
   # Cache Maven dependencies
   - task: Cache@2
@@ -38,32 +54,15 @@ steps:
     displayName: 'Cache Maven packages'
 
   # Clean and compile
-  - task: Maven@3
-    inputs:
-      mavenPomFile: 'pom.xml'
-      goals: 'clean compile'
-      options: '-B'
-      publishJUnitResults: false
-      javaHomeOption: 'JDKVersion'
-      jdkVersionOption: '1.21'
-      mavenVersionOption: 'Default'
-      mavenOptions: '$(MAVEN_OPTS)'
-      mavenAuthenticateFeed: false
+  - bash: |
+      echo "Running Maven clean compile..."
+      mvn clean compile -B
     displayName: 'Maven Clean & Compile'
 
   # Run tests
-  - task: Maven@3
-    inputs:
-      mavenPomFile: 'pom.xml'
-      goals: 'test'
-      options: '-B'
-      publishJUnitResults: true
-      testResultsFiles: '**/surefire-reports/TEST-*.xml'
-      javaHomeOption: 'JDKVersion'
-      jdkVersionOption: '1.21'
-      mavenVersionOption: 'Default'
-      mavenOptions: '$(MAVEN_OPTS)'
-      mavenAuthenticateFeed: false
+  - bash: |
+      echo "Running Maven tests..."
+      mvn test -B
     displayName: 'Run Unit Tests'
 
   # Publish test results
@@ -89,17 +88,9 @@ steps:
     displayName: 'Publish Code Coverage'
 
   # Package application
-  - task: Maven@3
-    inputs:
-      mavenPomFile: 'pom.xml'
-      goals: 'package -DskipTests'
-      options: '-B'
-      publishJUnitResults: false
-      javaHomeOption: 'JDKVersion'
-      jdkVersionOption: '1.21'
-      mavenVersionOption: 'Default'
-      mavenOptions: '$(MAVEN_OPTS)'
-      mavenAuthenticateFeed: false
+  - bash: |
+      echo "Running Maven package..."
+      mvn package -DskipTests -B
     displayName: 'Maven Package'
 
   # Publish build artifacts
