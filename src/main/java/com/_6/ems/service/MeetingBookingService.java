@@ -3,20 +3,19 @@ package com._6.ems.service;
 import com._6.ems.dto.request.BookingRequest;
 import com._6.ems.dto.request.MeetingInvitation;
 import com._6.ems.dto.response.MeetingBookingResponse;
-import com._6.ems.entity.Department;
-import com._6.ems.entity.MeetingAttendee;
-import com._6.ems.entity.MeetingBooking;
-import com._6.ems.entity.MeetingRoom;
+import com._6.ems.entity.*;
 import com._6.ems.exception.AppException;
 import com._6.ems.exception.ErrorCode;
 import com._6.ems.record.PersonnelInfo;
 import com._6.ems.repository.DepartmentRepository;
+import com._6.ems.repository.ManagerRepository;
 import com._6.ems.repository.MeetingBookingRepository;
 import com._6.ems.repository.MeetingRoomRepository;
 import com._6.ems.utils.PersonnelUtil;
 import com._6.ems.utils.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -38,6 +37,7 @@ public class MeetingBookingService {
     private final MeetingRoomRepository meetingRoomRepository;
     private final EmailService emailService;
     private final DepartmentRepository departmentRepository;
+    private final ManagerRepository managerRepository;
 
     @Transactional
     public MeetingBookingResponse createBooking(BookingRequest request) {
@@ -223,6 +223,22 @@ public class MeetingBookingService {
             }
         });
     }
+
+    @PreAuthorize("hasRole('MANAGER')")
+    @Transactional(readOnly = true)
+    public List<MeetingBookingResponse> getBookingsOfManagedDepartment() {
+        String managerCode = SecurityUtil.getCurrentUserCode();
+        Manager manager = managerRepository.findById(managerCode)
+                .orElseThrow(() -> new RuntimeException("Manager not found"));
+
+        Department department = manager.getDepartment();
+        if (department == null) {
+            throw new AppException(ErrorCode.MANAGER_NOT_MANAGE);
+        }
+
+        return bookingRepository.findAllByDepartmentId(department.getId()).stream().map(this::convertToDTO).toList();
+    }
+
 
     private MeetingInvitation buildMeetingInvitation(MeetingBooking booking) {
         Set<String> allCodes = Stream.concat(

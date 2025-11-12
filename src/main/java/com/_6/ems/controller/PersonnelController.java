@@ -71,9 +71,9 @@ public class PersonnelController {
             @Parameter(
                     description = "Mã phòng ban"
             )
-            @RequestParam(required = false) Integer department
+            @RequestParam(required = false) String departmentName
     ) {
-        var result = personnelService.getAllPersonnel(page, size, role, gender, department, keyword);
+        var result = personnelService.getAllPersonnel(page, size, role, gender, departmentName, keyword);
         return ApiResponse.<PageResponse<PersonnelResponse>>builder()
                 .result(result)
                 .build();

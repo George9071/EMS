@@ -75,4 +75,16 @@ public interface MeetingBookingRepository extends JpaRepository<MeetingBooking, 
             @Param("now") OffsetDateTime now);
 
     void deleteByOrganizerCode(String organizerCode);
+
+    @Query("""
+        SELECT mb 
+        FROM MeetingBooking mb
+        WHERE mb.organizerCode IN (
+            SELECT e.code
+            FROM Employee e
+            WHERE e.department.id = :departmentId
+        )
+        ORDER BY mb.startTime DESC
+    """)
+    List<MeetingBooking> findAllByDepartmentId(@Param("departmentId") int departmentId);
 }

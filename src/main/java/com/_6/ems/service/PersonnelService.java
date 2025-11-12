@@ -224,7 +224,7 @@ public class PersonnelService {
 
     @PreAuthorize("hasRole('ADMIN') or hasAuthority('AUTHORIZE_ADMIN')")
     public PageResponse<PersonnelResponse> getAllPersonnel(
-            int page, int size, String role, Gender gender, Integer department, String keyword) {
+            int page, int size, String role, Gender gender, String departmentName, String keyword) {
 
         if (page < 1) page = 1;
         if (size < 1) size = 10;
@@ -241,9 +241,11 @@ public class PersonnelService {
                     var employeeRoot = subquery.from(com._6.ems.entity.Employee.class);
                     subquery.select(employeeRoot.get("code"));
 
-                    if (department != null) {
+                    if (departmentName != null && !departmentName.isEmpty()) {
                         subquery.where(cb.equal(
-                                employeeRoot.get("department").get("id"), department));
+                                cb.lower(employeeRoot.get("department").get("name")),
+                                departmentName.toLowerCase()
+                        ));
                     }
 
                     return cb.in(root.get("code")).value(subquery);
@@ -254,25 +256,33 @@ public class PersonnelService {
                     var managerRoot = subquery.from(com._6.ems.entity.Manager.class);
                     subquery.select(managerRoot.get("code"));
 
-                    if (department != null) {
+                    if (departmentName != null && !departmentName.isEmpty()) {
                         subquery.where(cb.equal(
-                                managerRoot.get("department").get("id"), department));
+                                cb.lower(managerRoot.get("department").get("name")),
+                                departmentName.toLowerCase()
+                        ));
                     }
 
                     return cb.in(root.get("code")).value(subquery);
                 });
             }
-        } else if (department != null) {
+        } else if (departmentName != null && !departmentName.isEmpty()) {
             spec = spec.and((root, query, cb) -> {
                 var employeeSubquery = query.subquery(String.class);
                 var employeeRoot = employeeSubquery.from(com._6.ems.entity.Employee.class);
                 employeeSubquery.select(employeeRoot.get("code"))
-                        .where(cb.equal(employeeRoot.get("department").get("id"), department));
+                        .where(cb.equal(
+                                cb.lower(employeeRoot.get("department").get("name")),
+                                departmentName.toLowerCase()
+                        ));
 
                 var managerSubquery = query.subquery(String.class);
                 var managerRoot = managerSubquery.from(com._6.ems.entity.Manager.class);
                 managerSubquery.select(managerRoot.get("code"))
-                        .where(cb.equal(managerRoot.get("department").get("id"), department));
+                        .where(cb.equal(
+                                cb.lower(managerRoot.get("department").get("name")),
+                                departmentName.toLowerCase()
+                        ));
 
                 return cb.or(
                         cb.in(root.get("code")).value(employeeSubquery),

@@ -64,4 +64,10 @@ public class MeetingBookingController {
                 .message("Booking deleted successfully")
                 .build();
     }
+
+    @GetMapping("/manager")
+    public ResponseEntity<ApiResponse<List<MeetingBookingResponse>>> getDepartmentBookings() {
+        List<MeetingBookingResponse> bookings = bookingService.getBookingsOfManagedDepartment();
+        return ResponseEntity.ok(ApiResponse.success(bookings));
+    }
 }
