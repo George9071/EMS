@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -13,6 +15,7 @@ import lombok.experimental.FieldDefaults;
 public class ProjectCreationRequest {
     String name;
     String description;
-    int department_id;
-    int max_participants;
+    int maxParticipants;
+    LocalDate startDate;
+    LocalDate endDate;
 }

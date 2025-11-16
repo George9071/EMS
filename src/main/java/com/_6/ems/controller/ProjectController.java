@@ -1,6 +1,7 @@
 package com._6.ems.controller;
 
 import com._6.ems.dto.request.ProjectCreationRequest;
+import com._6.ems.dto.request.ProjectUpdateRequest;
 import com._6.ems.dto.response.*;
 import com._6.ems.enums.ProjectStatus;
 import io.swagger.v3.oas.annotations.Operation;
@@ -8,10 +9,13 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import com._6.ems.service.ProjectService;
 import lombok.RequiredArgsConstructor;
+
+import java.time.LocalDate;
 import java.util.List;
 
 @Tag(name = "Projects", description = "Project management APIs")
@@ -32,21 +36,54 @@ public class ProjectController {
                 .build();
     }
 
-    @Operation(summary = "Get project by code")
-    @GetMapping("/{code}")
-    public ApiResponse<ProjectResponse> getProjectByCode(
-            @Parameter(description = "Project ID") @PathVariable String code) {
+    @Operation(summary = "Update a project")
+    @PutMapping("/{id}")
+    public ApiResponse<ProjectResponse> updateProject(
+            @Parameter(description = "Project ID") @PathVariable String id,
+            @RequestBody ProjectUpdateRequest request
+    ) {
         return ApiResponse.<ProjectResponse>builder()
-                .result(projectService.getProjectById(code))
+                .result(projectService.updateProject(id, request))
+                .message("Update project success!")
+                .build();
+    }
+
+    @Operation(summary = "Get project by id")
+    @GetMapping("/{id}")
+    public ApiResponse<ProjectResponse> getProjectByCode(
+            @Parameter(description = "Project ID") @PathVariable String id) {
+        return ApiResponse.<ProjectResponse>builder()
+                .result(projectService.getProjectById(id))
                 .build();
     }
 
     @Operation(summary = "List projects by status")
-    @GetMapping("/status")
+    @GetMapping("/search/status")
     public ApiResponse<List<ProjectResponse>> getProjectsByStatus(
             @Parameter(description = "Project status", example = "IN_PROGRESS") @RequestParam ProjectStatus status) {
         return ApiResponse.<List<ProjectResponse>>builder()
-                .result(projectService.getProjectsByStatus(status))
+                .result(projectService.searchByStatus(status))
+                .build();
+    }
+
+    @Operation(summary = "Search projects by start date range")
+    @GetMapping("/search/by-date-range")
+    public ApiResponse<List<ProjectResponse>> searchByDateRange(
+            @Parameter(
+                    description = "Ngày bắt đầu (format: YYYY-MM-DD)",
+                    example = "2025-01-01"
+            )
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+
+            @Parameter(
+                    description = "Ngày kết thúc (format: YYYY-MM-DD)",
+                    example = "2025-01-01"
+            )
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ApiResponse.<List<ProjectResponse>>builder()
+                .result(projectService.searchByStartDateRange(from, to))
+                .message("Search projects by start date range success!")
                 .build();
     }
 
@@ -92,15 +129,12 @@ public class ProjectController {
                 .build();
     }
 
-    @Operation(summary = "Update project status")
-    @PutMapping("/{id}/status")
-    public ApiResponse<ProjectResponse> updateProjectStatus(
-            @Parameter(description = "Project ID") @PathVariable String id,
-            @Parameter(description = "Status", example = "COMPLETED") @RequestParam ProjectStatus status) {
-
-        return ApiResponse.<ProjectResponse>builder()
-                .result(projectService.updateProjectStatus(id, status))
+    @Operation(summary = "Delete a project")
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> deleteProject(@PathVariable String id) {
+        projectService.deleteProject(id);
+        return ApiResponse.<Void>builder()
+                .message("Delete project success!")
                 .build();
     }
-
 }

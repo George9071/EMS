@@ -14,9 +14,9 @@ public class ProjectResponse {
     String id;
     String name;
     String description;
-    String department_name;
+    String departmentName;
     String status;
-    long department_id;
+    long departmentId;
     int participants;
-    int max_participants;
+    int maxParticipants;
 }

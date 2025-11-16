@@ -200,7 +200,7 @@ public class DepartmentService {
                 .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
 
         Department current = employee.getDepartment();
-        if (current == null || current.getId() != dept.getId()) throw new AppException(ErrorCode.EMPLOYEE_NOT_BELONG);
+        if (current == null || current.getId() != dept.getId()) throw new AppException(ErrorCode.EMPLOYEE_NOT_IN_DEPARTMENT);
 
         current.removeEmployee(employee);
     }

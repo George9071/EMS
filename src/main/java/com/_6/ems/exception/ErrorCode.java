@@ -12,6 +12,7 @@ public enum ErrorCode {
     // =====================================================
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     EMAIL_EXCEPTION(100, "Email sending error", HttpStatus.INTERNAL_SERVER_ERROR),
+    INVALID_DATE_RANGE(101, "End date must be after start date", HttpStatus.BAD_REQUEST),
 
     // =====================================================
     // 1xxx - Authentication & Authorization
@@ -67,7 +68,9 @@ public enum ErrorCode {
     // =====================================================
     DEPARTMENT_NOT_FOUND(4001, "Department not found", HttpStatus.NOT_FOUND),
     DEPARTMENT_ALREADY_HAS_MANAGER(4002, "Department already has a manager", HttpStatus.CONFLICT),
-    EMPLOYEE_NOT_BELONG(4003, "Employee does not belong to this department", HttpStatus.BAD_REQUEST),
+    EMPLOYEE_NOT_IN_DEPARTMENT(4003, "Employee does not belong to this department", HttpStatus.BAD_REQUEST),
+    EMPLOYEE_NOT_ASSIGNED_TO_DEPARTMENT(4004, "Employee not belong to any department", HttpStatus.BAD_REQUEST),
+    PROJECT_NOT_ASSIGNED_TO_DEPARTMENT(4005, "Project not belong to any department", HttpStatus.BAD_REQUEST),
     // =====================================================
     // 5xxx - Project & Task
     // =====================================================
@@ -75,7 +78,8 @@ public enum ErrorCode {
     EXCEED_MAX_PARTICIPANTS(5002, "Project participant limit exceeded", HttpStatus.CONFLICT),
     TASK_NOT_FOUND(5003, "Task not found", HttpStatus.NOT_FOUND),
     ASSIGN_COMPLETED_TASK(5004, "Cannot assign a completed task.", HttpStatus.BAD_REQUEST),
-    EMPLOYEE_NOT_BELONG_TO_PROJECT(5005, "Employee is not part of the project", HttpStatus.BAD_REQUEST),
+    EMPLOYEE_NOT_IN_PROJECT(5005, "Employee is not part of the project", HttpStatus.BAD_REQUEST),
+    MANAGER_NOT_MANAGE_ANY_DEPARTMENT(5006, "Manager current not manage any department", HttpStatus.BAD_REQUEST),
 
     // =====================================================
     // 6xxx - File & Media

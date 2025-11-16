@@ -32,7 +32,7 @@ public class Employee {
     @JoinColumn(name = "department_id", referencedColumnName = "id" )
     Department department;
 
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "employee", orphanRemoval = true, cascade = {CascadeType.REMOVE})
     @Builder.Default
     List<EmployeeProject> projects = new ArrayList<>();
 

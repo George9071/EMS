@@ -165,7 +165,7 @@ class TaskServiceTest {
                 () -> taskService.createTask(creationRequest));
 
         // THEN
-        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.EMPLOYEE_NOT_BELONG_TO_PROJECT);
+        assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.EMPLOYEE_NOT_IN_PROJECT);
         verify(employeeRepository).findById("EMP001");
     }
 

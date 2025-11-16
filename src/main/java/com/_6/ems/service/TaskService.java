@@ -51,7 +51,7 @@ public class TaskService {
             boolean isMember = assignee.getProjects().stream()
                     .anyMatch(assignment -> assignment.getProject().equals(project));
 
-            if (!isMember) throw new AppException(EMPLOYEE_NOT_BELONG_TO_PROJECT);
+            if (!isMember) throw new AppException(EMPLOYEE_NOT_IN_PROJECT);
             task.setAssignee(assignee);
         }
 
@@ -90,7 +90,7 @@ public class TaskService {
         boolean isMember = assignee.getProjects().stream()
                 .anyMatch(project -> project.getProject().equals(task.getProject()));
 
-        if (!isMember) throw new AppException(EMPLOYEE_NOT_BELONG_TO_PROJECT);
+        if (!isMember) throw new AppException(EMPLOYEE_NOT_IN_PROJECT);
 
         Employee currentAssignee = task.getAssignee();
 

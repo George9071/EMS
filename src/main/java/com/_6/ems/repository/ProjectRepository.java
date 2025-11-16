@@ -1,5 +1,6 @@
 package com._6.ems.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import com._6.ems.enums.ProjectStatus;
@@ -13,4 +14,8 @@ import com._6.ems.entity.Project;
 public interface ProjectRepository extends JpaRepository<Project, String> {
     List<Project> findByDepartment(Department department);
     List<Project> findByStatus(ProjectStatus status);
+    List<Project> findByStartDateBetween(LocalDate from, LocalDate to);
+
+    List<Project> findByStatusAndDepartment_Id(ProjectStatus status, Integer departmentId);
+    List<Project> findByStartDateBetweenAndDepartment_Id(LocalDate from, LocalDate to, Integer departmentId);
 }
