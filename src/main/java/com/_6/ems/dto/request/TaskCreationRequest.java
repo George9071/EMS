@@ -16,6 +16,6 @@ public class TaskCreationRequest {
     String title;
     String description;
     OffsetDateTime due;
-    String project_id;
-    String assignee_code;
+    String projectId;
+    String assigneeCode;
 }

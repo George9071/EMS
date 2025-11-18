@@ -75,7 +75,6 @@ public class ProjectController {
             )
             @RequestParam
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-
             @Parameter(
                     description = "Ngày kết thúc (format: YYYY-MM-DD)",
                     example = "2025-01-01"

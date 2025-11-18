@@ -19,6 +19,6 @@ public class TaskResponse {
     String description;
     OffsetDateTime due;
     TaskStatus status;
-    String project_id;
-    String assignee_code;
+    String projectId;
+    String assigneeCode;
 }

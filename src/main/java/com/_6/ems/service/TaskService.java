@@ -1,10 +1,22 @@
 package com._6.ems.service;
 
+import java.io.IOException;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com._6.ems.dto.request.TaskUpdateRequest;
+import com._6.ems.dto.response.FileResponse;
+import com._6.ems.entity.File;
 import com._6.ems.exception.AppException;
+import com._6.ems.exception.ErrorCode;
+import com._6.ems.mapper.FileMapper;
 import com._6.ems.mapper.TaskMapper;
+import com._6.ems.repository.FileRepository;
+import com._6.ems.utils.CloudinaryUtil;
+import com._6.ems.utils.SecurityUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -21,6 +33,7 @@ import com._6.ems.repository.ProjectRepository;
 import com._6.ems.repository.TaskRepository;
 
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import static com._6.ems.exception.ErrorCode.*;
 
@@ -29,14 +42,17 @@ import static com._6.ems.exception.ErrorCode.*;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TaskService {
 
+    CloudinaryUtil cloudinaryUtil;
     TaskRepository taskRepository;
     EmployeeRepository employeeRepository;
     ProjectRepository projectRepository;
+    FileRepository fileRepository;
     TaskMapper taskMapper;
+    FileMapper fileMapper;
 
     @Transactional
     public TaskResponse createTask(TaskCreationRequest request) {
-        Project project = projectRepository.findById(request.getProject_id())
+        Project project = projectRepository.findById(request.getProjectId())
                 .orElseThrow(() -> new AppException(PROJECT_NOT_FOUND));
 
         Task task = taskMapper.toTask(request);
@@ -44,8 +60,8 @@ public class TaskService {
         task.setStatus(TaskStatus.PENDING);
         task.setAssignee(null);
 
-        if (request.getAssignee_code() != null && !request.getAssignee_code().isEmpty()) {
-            Employee assignee = employeeRepository.findById(request.getAssignee_code())
+        if (request.getAssigneeCode() != null && !request.getAssigneeCode().isEmpty()) {
+            Employee assignee = employeeRepository.findById(request.getAssigneeCode())
                     .orElseThrow(() -> new AppException(EMPLOYEE_NOT_FOUND));
 
             boolean isMember = assignee.getProjects().stream()
@@ -104,21 +120,80 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskResponse updateTaskStatus(String taskId, TaskStatus status) {
+    public TaskResponse updateTask(String taskId, TaskUpdateRequest request) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new AppException(TASK_NOT_FOUND));
 
         TaskStatus oldStatus = task.getStatus();
+        TaskStatus newStatus = request.getStatus();
         Employee assignee = task.getAssignee();
 
-        if (status == TaskStatus.COMPLETED && oldStatus != status) {
+        if (newStatus == TaskStatus.COMPLETED && oldStatus != newStatus) {
             if (assignee != null) assignee.setTaskCompleted(assignee.getTaskCompleted() + 1);
         }
-        else if (status != TaskStatus.COMPLETED && oldStatus == TaskStatus.COMPLETED) {
+
+        if (newStatus != TaskStatus.COMPLETED && oldStatus == TaskStatus.COMPLETED) {
             if (assignee != null) assignee.setTaskCompleted(Math.max(0, assignee.getTaskCompleted() - 1));
         }
 
-        task.setStatus(status);
-        return taskMapper.toTaskResponse(taskRepository.save(task));
+        if (newStatus != null && !newStatus.equals(oldStatus)) {
+            task.setLastStatusChange(OffsetDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")));
+        }
+
+        taskMapper.updateTask(request, task);
+        taskRepository.save(task);
+        return taskMapper.toTaskResponse(task);
+    }
+
+    @Transactional
+    public FileResponse submitTask(String taskId, MultipartFile file) {
+        String code = SecurityUtil.getCurrentUserCode();
+        Employee employee = employeeRepository.findById(code)
+                .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
+
+        cloudinaryUtil.validateFile(file);
+        String format = cloudinaryUtil.getUploadFormat(file.getContentType(), file.getOriginalFilename());
+
+        try {
+            String fileUrl = cloudinaryUtil.uploadToCloudinary(file, format);
+
+            File entity = File.builder()
+                    .name(file.getOriginalFilename())
+                    .type(file.getContentType())
+                    .url(fileUrl)
+                    .uploadTime(OffsetDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")))
+                    .uploader(employee)
+                    .task(task)
+                    .build();
+
+            File saved = fileRepository.save(entity);
+
+            if (task.getFiles() == null) task.setFiles(new ArrayList<>());
+
+            task.getFiles().add(saved);
+            taskRepository.save(task);
+
+            return fileMapper.toResponse(saved);
+        } catch (IOException e) {
+            throw new RuntimeException("Cloudinary upload failed", e);
+        }
+    }
+
+    public List<FileResponse> getAllFilesOfTask(String taskId) {
+        return fileRepository.findByTask_Id(taskId)
+                .stream()
+                .map(fileMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteTask(String taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
+
+        taskRepository.delete(task);
     }
 }
