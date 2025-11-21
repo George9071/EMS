@@ -36,6 +36,7 @@ public class PersonnelUpdateRequest {
     String street;
     String description;
     String skills;
+    String position;
 
     List<String> privileges;
 }
