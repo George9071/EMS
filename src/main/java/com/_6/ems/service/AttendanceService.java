@@ -58,6 +58,7 @@ public class AttendanceService {
                         .personnel(personnel)
                         .date(today)
                         .status(AttendanceStatus.PRESENT)
+                        .type(AttendanceType.NOT_ENOUGH_HOURS)
                         .build());
 
         if (attendanceRecord.getCheckIn() != null) throw new AppException(ErrorCode.ATTENDANCE_ALREADY_CHECKIN);
