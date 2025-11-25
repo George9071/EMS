@@ -44,4 +44,11 @@ public class File {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
     Task task;
+
+    @Column(name = "ai_review", columnDefinition = "TEXT")
+    private String aiReview;
+
+    @Column(name = "ai_score")
+    private Integer aiScore;
+
 }

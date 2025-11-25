@@ -86,7 +86,7 @@ public interface AttendanceRepository extends JpaRepository<AttendanceRecord, St
         select a
         from AttendanceRecord a
         join fetch a.personnel p
-        where p.code = :code and a.checkOut is null
+        where p.code = :code and a.checkOut is null and a.date = CURRENT_DATE
         order by a.date desc, a.checkIn desc
         """)
     Optional<AttendanceRecord> findOpenForUpdate(@Param("code") String code);

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com._6.ems.dto.request.TaskUpdateRequest;
+import com._6.ems.dto.response.AiReviewResponse;
 import com._6.ems.dto.response.FileResponse;
 import com._6.ems.entity.File;
 import com._6.ems.exception.AppException;
@@ -33,6 +34,8 @@ import com._6.ems.repository.ProjectRepository;
 import com._6.ems.repository.TaskRepository;
 
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import static com._6.ems.exception.ErrorCode.*;
@@ -49,6 +52,7 @@ public class TaskService {
     FileRepository fileRepository;
     TaskMapper taskMapper;
     FileMapper fileMapper;
+    AiService aiService;
 
     @Transactional
     public TaskResponse createTask(TaskCreationRequest request) {
@@ -157,7 +161,10 @@ public class TaskService {
         cloudinaryUtil.validateFile(file);
         String format = cloudinaryUtil.getUploadFormat(file.getContentType(), file.getOriginalFilename());
 
+
         try {
+            AiReviewResponse aiReview = aiService.getAiReviewTask(file, task);
+
             String fileUrl = cloudinaryUtil.uploadToCloudinary(file, format);
 
             File entity = File.builder()
@@ -176,7 +183,9 @@ public class TaskService {
             task.getFiles().add(saved);
             taskRepository.save(task);
 
-            return fileMapper.toResponse(saved);
+            FileResponse response = fileMapper.toResponse(saved);
+            response.setAiReviewResponse(aiReview);
+            return response;
         } catch (IOException e) {
             throw new RuntimeException("Cloudinary upload failed", e);
         }
@@ -186,7 +195,7 @@ public class TaskService {
         return fileRepository.findByTask_Id(taskId)
                 .stream()
                 .map(fileMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional

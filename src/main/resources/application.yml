@@ -9,6 +9,14 @@ spring:
     driverClassName: "com.mysql.cj.jdbc.Driver"
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+  ai:
+    openai:
+      api-key: AIzaSyA4tLJw2HgjtpLY9qh3owPGGzRq_ZPI8Ew
+      chat:
+        base-url: https://generativelanguage.googleapis.com
+        completions-path: /v1beta/openai/chat/completions
+        options:
+          model: gemini-2.0-flash
   jpa:
     hibernate:
       ddl-auto: update
