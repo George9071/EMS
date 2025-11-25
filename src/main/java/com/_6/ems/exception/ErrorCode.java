@@ -22,6 +22,7 @@ public enum ErrorCode {
     ACCESS_DENIED(1003, "Access denied", HttpStatus.FORBIDDEN),
     INVALID_KEY(1004, "Nhập input sai", HttpStatus.BAD_REQUEST),
 
+    EMAIL_ALREADY_EXISTS(1005, "Email already exists", HttpStatus.CONFLICT),
     // =====================================================
     // 11xx - Account & User
     // =====================================================

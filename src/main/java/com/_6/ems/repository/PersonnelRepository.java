@@ -22,4 +22,5 @@ public interface PersonnelRepository extends JpaRepository<Personnel, String> {
     List<Personnel> findAllByPrivilegesContains(Privilege privilege);
     List<Personnel> findByCodeIn(Collection<String> codes);
     Page<Personnel> findAll(Specification<Personnel> specification, Pageable pageable);
+    boolean existsByEmail(String email);
 }

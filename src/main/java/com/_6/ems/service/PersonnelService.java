@@ -60,7 +60,12 @@ public class PersonnelService {
 
     @Transactional
     public PersonnelResponse createPersonnel(PersonnelCreationRequest request) {
+        if(personnelRepository.existsByEmail(request.getEmail())){
+            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+
         Account account = accountService.createAccount(request.getAccountCreationRequest());
+
         Personnel personnel = personnelMapper.toPersonnel(request);
 
         personnel.setCode(generateCode(request.getFirstName(), request.getLastName(), request.getDob()));
