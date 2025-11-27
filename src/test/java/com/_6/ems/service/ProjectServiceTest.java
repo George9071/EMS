@@ -14,12 +14,16 @@ import com._6.ems.mapper.ProjectMapper;
 import com._6.ems.repository.DepartmentRepository;
 import com._6.ems.repository.EmployeeRepository;
 import com._6.ems.repository.ProjectRepository;
+import com._6.ems.repository.EmployeeProjectRepository;
+import com._6.ems.repository.ManagerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -31,6 +35,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ProjectServiceTest {
 
     @Mock
@@ -41,6 +46,12 @@ class ProjectServiceTest {
 
     @Mock
     private EmployeeRepository employeeRepository;
+
+    @Mock
+    private EmployeeProjectRepository employeeProjectRepository;
+
+    @Mock
+    private ManagerRepository managerRepository;
 
     @Mock
     private ProjectMapper projectMapper;
@@ -56,6 +67,8 @@ class ProjectServiceTest {
     private Employee employee;
     private ProjectCreationRequest creationRequest;
     private ProjectResponse projectResponse;
+    private org.mockito.MockedStatic<com._6.ems.utils.SecurityUtil> securityUtilMock;
+    private com._6.ems.entity.Manager manager;
 
     @BeforeEach
     void setUp() {
@@ -73,20 +86,44 @@ class ProjectServiceTest {
                 .employees(new HashSet<>())
                 .build();
 
+        // attach default department to project to avoid PROJECT_NOT_ASSIGNED_TO_DEPARTMENT
+        project.setDepartment(department);
+
         employee = Employee.builder()
                 .code("EMP001")
                 .projects(new ArrayList<>())
                 .build();
 
+        // attach default department to employee so department checks pass
+        employee.setDepartment(department);
+
         creationRequest = ProjectCreationRequest.builder()
-                .name("Test Project")
-//                .departmentId(1)
-                .build();
+            .name("Test Project")
+            .startDate(LocalDate.now())
+            .endDate(LocalDate.now().plusDays(1))
+            .build();
 
         projectResponse = ProjectResponse.builder()
                 .id("PRJ001")
                 .name("Test Project")
                 .build();
+
+        // Mock SecurityUtil statics and manager lookup used by service
+        securityUtilMock = mockStatic(com._6.ems.utils.SecurityUtil.class);
+        securityUtilMock.when(com._6.ems.utils.SecurityUtil::isCurrentUserAdmin).thenReturn(true);
+        securityUtilMock.when(com._6.ems.utils.SecurityUtil::getCurrentUserCode).thenReturn("MGR001");
+
+        manager = com._6.ems.entity.Manager.builder()
+                .code("MGR001")
+                .department(department)
+                .build();
+        when(managerRepository.findById("MGR001")).thenReturn(Optional.of(manager));
+        when(employeeProjectRepository.existsByEmployee_CodeAndProject_Id(anyString(), anyString())).thenReturn(false);
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        if (securityUtilMock != null) securityUtilMock.close();
     }
 
     @Test
