@@ -156,7 +156,8 @@ public class ProjectService {
                 .existsByEmployee_CodeAndProject_Id(employeeCode, projectId);
 
         if (!assigned) {
-            if (project.getParticipants() >= project.getMaxParticipants()) {
+            int currentParticipants = project.getEmployees().size();
+            if (currentParticipants >= project.getMaxParticipants()) {
                 throw new AppException(ErrorCode.EXCEED_MAX_PARTICIPANTS);
             }
 
@@ -167,7 +168,7 @@ public class ProjectService {
                     .build();
 
             project.getEmployees().add(member);
-            project.setParticipants(project.getParticipants() + 1);
+            project.setParticipants(project.getEmployees().size());
         }
 
         projectRepository.save(project);
