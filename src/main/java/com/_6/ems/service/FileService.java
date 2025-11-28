@@ -23,7 +23,7 @@ public class FileService {
     FileMapper fileMapper;
 
     public FileResponse getFileById(String fileId) {
-        return fileMapper.toResponse(fileRepository.findById(fileId)
+        return fileMapper.toFileResponse(fileRepository.findById(fileId)
                 .orElseThrow(() -> new AppException(ErrorCode.FILE_NOT_FOUND)));
     }
 }

@@ -8,8 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com._6.ems.dto.request.TaskUpdateRequest;
-import com._6.ems.dto.response.AiReviewResponse;
-import com._6.ems.dto.response.FileResponse;
+import com._6.ems.dto.response.*;
 import com._6.ems.entity.File;
 import com._6.ems.exception.AppException;
 import com._6.ems.exception.ErrorCode;
@@ -24,7 +23,6 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
 import com._6.ems.dto.request.TaskCreationRequest;
-import com._6.ems.dto.response.TaskResponse;
 import com._6.ems.entity.Employee;
 import com._6.ems.entity.Project;
 import com._6.ems.entity.Task;
@@ -150,7 +148,7 @@ public class TaskService {
     }
 
     @Transactional
-    public FileResponse submitTask(String taskId, MultipartFile file) {
+    public UploadFileResponse submitTask(String taskId, MultipartFile file) {
         String code = SecurityUtil.getCurrentUserCode();
         Employee employee = employeeRepository.findById(code)
                 .orElseThrow(() -> new AppException(ErrorCode.EMPLOYEE_NOT_FOUND));
@@ -174,6 +172,8 @@ public class TaskService {
                     .uploadTime(OffsetDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh")))
                     .uploader(employee)
                     .task(task)
+                    .aiReview(aiReview.getReview())
+                    .aiScore(aiReview.getScore())
                     .build();
 
             File saved = fileRepository.save(entity);
@@ -183,7 +183,7 @@ public class TaskService {
             task.getFiles().add(saved);
             taskRepository.save(task);
 
-            FileResponse response = fileMapper.toResponse(saved);
+            UploadFileResponse response = fileMapper.toUploadFileResponse(saved);
             response.setAiReviewResponse(aiReview);
             return response;
         } catch (IOException e) {
@@ -194,7 +194,7 @@ public class TaskService {
     public List<FileResponse> getAllFilesOfTask(String taskId) {
         return fileRepository.findByTask_Id(taskId)
                 .stream()
-                .map(fileMapper::toResponse)
+                .map(fileMapper::toFileResponse)
                 .toList();
     }
 
@@ -204,5 +204,11 @@ public class TaskService {
                 .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
 
         taskRepository.delete(task);
+    }
+
+    public GuideTaskResponse getAiGuideForTask(String taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
+        return aiService.getAiGuideForTask(task);
     }
 }

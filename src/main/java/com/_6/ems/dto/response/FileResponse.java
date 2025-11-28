@@ -20,6 +20,6 @@ public class FileResponse {
     String fileUrl;
     String fileName;
     String fileType;
-
-    AiReviewResponse aiReviewResponse;
+    String aiReview;
+    Integer aiScore;
 }

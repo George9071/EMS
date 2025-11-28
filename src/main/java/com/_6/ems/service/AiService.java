@@ -1,6 +1,7 @@
 package com._6.ems.service;
 
 import com._6.ems.dto.response.AiReviewResponse;
+import com._6.ems.dto.response.GuideTaskResponse;
 import com._6.ems.entity.Task;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -14,7 +15,6 @@ import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,6 +80,7 @@ public class AiService {
                     - 0-59: Cần cải thiện nhiều
                     
                     CHỈ TRẢ VỀ JSON, KHÔNG CÓ TEXT NÀO KHÁC.
+                    Và trả về bằng tiếng anh.
                     """)
                     .user(promptUserSpec -> promptUserSpec
                             .media(media)
@@ -152,6 +153,80 @@ public class AiService {
             throw new RuntimeException("Lỗi parse JSON từ AI" , e);
         } catch (Exception e) {
             throw new RuntimeException("Lỗi không xác định khi gọi AI: " + e.getMessage(), e);
+        }
+    }
+
+
+    public GuideTaskResponse getAiGuideForTask(Task task) {
+        try {
+            ChatOptions chatOptions = ChatOptions.builder()
+                    .temperature(0.4D)
+                    .build();
+
+            String taskContent = """
+                    # Task Information
+                    Title: %s
+                    Description: %s
+                    """.formatted(task.getTitle(), task.getDescription());
+
+            String aiRawResponse = chatClient.prompt()
+                    .options(chatOptions)
+                    .system("""
+                            You are an expert who gives clear, step-by-step guidance for completing tasks.
+                            
+                            Your mission:
+                            1. Read the task title and description carefully.
+                            2. Understand the goal, requirements, and expected outcomes.
+                            3. Provide a practical execution plan for the user.
+                            4. Break down the instructions into clear steps, with details and reasoning.
+                            5. Identify any prerequisite knowledge, tools, risks, or important notes.
+                            
+                            Response format MUST be valid JSON (no markdown, no extra text):
+                            {
+                              "guide": "A detailed explanation and step-by-step instructions.",
+                              "steps": ["Step 1", "Step 2", "Step 3"],
+                              "notes": ["Important note 1", "Important note 2"]
+                            }
+                            
+                            Only return JSON. Respond in English.
+                            """)
+                    .user(taskContent)
+                    .call()
+                    .content();
+
+            if (aiRawResponse == null || aiRawResponse.trim().isEmpty()) {
+                throw new RuntimeException("AI returned empty response");
+            }
+
+            // Clean markdown
+            String cleaned = aiRawResponse
+                    .replaceAll("```json\\s*", "")
+                    .replaceAll("```\\s*", "")
+                    .trim();
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = mapper.readTree(cleaned);
+
+            String guide = node.has("guide") ? node.get("guide").asText() : "No guide provided.";
+            List<String> steps = new ArrayList<>();
+            List<String> notes = new ArrayList<>();
+
+            if (node.has("steps") && node.get("steps").isArray()) {
+                node.get("steps").forEach(s -> steps.add(s.asText()));
+            }
+
+            if (node.has("notes") && node.get("notes").isArray()) {
+                node.get("notes").forEach(n -> notes.add(n.asText()));
+            }
+
+            return GuideTaskResponse.builder()
+                    .guide(guide)
+                    .steps(steps)
+                    .notes(notes)
+                    .build();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating AI guide for task: " + e.getMessage(), e);
         }
     }
 }
