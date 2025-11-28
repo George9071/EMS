@@ -104,4 +104,6 @@ public interface AttendanceRepository extends JpaRepository<AttendanceRecord, St
             "WHERE a.personnel.code = :personnelCode AND a.date = :today")
     Optional<AttendanceRecord> findTodayRecordByPersonnelCode(@Param("personnelCode") String personnelCode,
                                                               @Param("today") LocalDate today);
+
+    List<AttendanceRecord> findByPersonnelCodeAndDateBetween( String code, LocalDate start, LocalDate end);
 }

@@ -1,6 +1,7 @@
 package com._6.ems.repository;
 
 import java.time.YearMonth;
+import java.util.List;
 import java.util.Optional;
 
 import com._6.ems.dto.request.SalaryStatisticsProjection;
@@ -50,4 +51,5 @@ public interface SalaryRepository extends JpaRepository<Salary, String> {
     Page<Salary> findAllByOrderByYearDescMonthDesc(Pageable pageable);
 
     Page<Salary> findByMonthAndYearOrderByYearDescMonthDesc(Integer month, Integer year, Pageable pageable);
+
 }
