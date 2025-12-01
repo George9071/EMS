@@ -10,6 +10,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 public class EmployeeResponse {
     String employee_code;
+    String employee_name;
     int department_id;
     int task_completed;
 }

@@ -21,6 +21,11 @@ public interface EmployeeMapper {
     Employee toEmployee(EmployeeCreationRequest request);
 
     @Mapping(source = "code", target = "employee_code")
+    @Mapping(
+            target = "employee_name",
+            expression = "java(employee.getInformationRecord().getFirstName() "
+                    + "+ \" \" + employee.getInformationRecord().getLastName())"
+    )
     @Mapping(source = "department.id", target = "department_id")
     @Mapping(source = "taskCompleted", target = "task_completed")
     EmployeeResponse toEmployeeResponse(Employee employee);
