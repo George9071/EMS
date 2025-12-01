@@ -1,11 +1,15 @@
 package com._6.ems.controller;
 
+import com._6.ems.dto.request.ChatbotRequest;
 import com._6.ems.dto.request.PersonnelCreationRequest;
 import com._6.ems.dto.request.PersonnelUpdateRequest;
 import com._6.ems.dto.request.UpdateSalaryRequest;
 import com._6.ems.dto.response.*;
 import com._6.ems.enums.Gender;
+import com._6.ems.service.ChatMessageService;
+import com._6.ems.service.ChatbotService;
 import com._6.ems.service.PersonnelService;
+import com._6.ems.utils.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,6 +38,8 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PersonnelController {
     PersonnelService personnelService;
+    ChatbotService chatbotService;
+    ChatMessageService chatMessageService;
 
     @Operation(summary = "Get my profile")
     @GetMapping("/myInfo")
@@ -150,5 +156,25 @@ public class PersonnelController {
                 "Cập nhật lương cho nhân viên thành công",
                 response
         ));
+    }
+
+    @PostMapping("/ask")
+    public ResponseEntity<ChatbotResponse> askQuestion(
+            @RequestBody @Valid ChatbotRequest request) {
+
+        String personnelCode = SecurityUtil.getCurrentUserCode();
+
+        ChatbotResponse response = chatbotService.processQuestion(
+                personnelCode,
+                request.getQuestion()
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/chat/messages")
+    public ResponseEntity<List<ChatMessageDTO>> chatMessages(){
+        String personnelCode = SecurityUtil.getCurrentUserCode();
+        return ResponseEntity.ok(chatMessageService.getUserChatHistory(personnelCode));
     }
 }

@@ -17,6 +17,11 @@ spring:
         completions-path: /v1beta/openai/chat/completions
         options:
           model: gemini-2.0-flash
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: always
   jpa:
     hibernate:
       ddl-auto: update

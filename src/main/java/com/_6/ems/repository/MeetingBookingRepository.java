@@ -87,4 +87,30 @@ public interface MeetingBookingRepository extends JpaRepository<MeetingBooking, 
         ORDER BY mb.startTime DESC
     """)
     List<MeetingBooking> findAllByDepartmentId(@Param("departmentId") int departmentId);
+
+    @Query("SELECT mb FROM MeetingBooking mb " +
+            "WHERE mb.roomId = :roomId " +
+            "AND mb.startTime < :endTime " +
+            "AND mb.endTime > :startTime")
+    List<MeetingBooking> findByRoomIdAndTimeOverlap(
+            @Param("roomId") Long roomId,
+            @Param("startTime") OffsetDateTime startTime,
+            @Param("endTime") OffsetDateTime endTime
+    );
+
+    List<MeetingBooking> findByOrganizerCodeAndStartTimeBetween(
+            String organizerCode,
+            OffsetDateTime startTime,
+            OffsetDateTime endTime
+    );
+
+    @Query("SELECT DISTINCT mb FROM MeetingBooking mb " +
+            "JOIN mb.attendees ma " +
+            "WHERE ma.attendeeCode = :attendeeCode " +
+            "AND mb.startTime BETWEEN :startTime AND :endTime")
+    List<MeetingBooking> findByAttendeeCodeAndStartTimeBetween(
+            @Param("attendeeCode") String attendeeCode,
+            @Param("startTime") OffsetDateTime startTime,
+            @Param("endTime") OffsetDateTime endTime
+    );
 }

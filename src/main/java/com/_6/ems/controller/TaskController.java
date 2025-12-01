@@ -3,18 +3,17 @@ package com._6.ems.controller;
 import java.util.List;
 
 import com._6.ems.dto.request.TaskUpdateRequest;
-import com._6.ems.dto.response.FileResponse;
+import com._6.ems.dto.response.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com._6.ems.dto.request.TaskCreationRequest;
-import com._6.ems.dto.response.ApiResponse;
-import com._6.ems.dto.response.TaskResponse;
 import com._6.ems.service.TaskService;
 
 import lombok.RequiredArgsConstructor;
@@ -88,11 +87,11 @@ public class TaskController {
 
     @Operation(summary = "Upload files to task")
     @PostMapping(value="/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ApiResponse<FileResponse> submitTask(
+    public ApiResponse<UploadFileResponse> submitTask(
             @RequestBody MultipartFile file,
             @RequestParam String taskId) {
 
-        return ApiResponse.<FileResponse>builder()
+        return ApiResponse.<UploadFileResponse>builder()
                 .result(taskService.submitTask(taskId, file))
                 .build();
     }
@@ -112,5 +111,10 @@ public class TaskController {
         return ApiResponse.<Void>builder()
                 .message("Delete task success!")
                 .build();
+    }
+
+    @GetMapping("/{taskId}/guide")
+    public ResponseEntity<ApiResponse<GuideTaskResponse>> getAiGuideForTask(@PathVariable String taskId) {
+        return ResponseEntity.ok(ApiResponse.success(taskService.getAiGuideForTask(taskId)));
     }
 }
