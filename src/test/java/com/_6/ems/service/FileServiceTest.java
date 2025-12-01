@@ -56,7 +56,7 @@ class FileServiceTest {
     void getFileById_existing_returnsResponse() {
         // GIVEN
         when(fileRepository.findById("F1")).thenReturn(Optional.of(fileEntity));
-        when(fileMapper.toResponse(fileEntity)).thenReturn(fileResponse);
+        when(fileMapper.toFileResponse(fileEntity)).thenReturn(fileResponse);
 
         // WHEN
         FileResponse result = fileService.getFileById("F1");
@@ -66,7 +66,7 @@ class FileServiceTest {
         assertThat(result.getFileId()).isEqualTo("F1");
         assertThat(result.getFileName()).isEqualTo("document.pdf");
         verify(fileRepository).findById("F1");
-        verify(fileMapper).toResponse(fileEntity);
+        verify(fileMapper).toFileResponse(fileEntity);
     }
 
     @Test
@@ -84,20 +84,20 @@ class FileServiceTest {
     void getFileById_invokesMapperWithEntity() {
         // GIVEN
         when(fileRepository.findById("F1")).thenReturn(Optional.of(fileEntity));
-        when(fileMapper.toResponse(fileEntity)).thenReturn(fileResponse);
+        when(fileMapper.toFileResponse(fileEntity)).thenReturn(fileResponse);
 
         // WHEN
         fileService.getFileById("F1");
 
         // THEN
-        verify(fileMapper, times(1)).toResponse(fileEntity);
+        verify(fileMapper, times(1)).toFileResponse(fileEntity);
     }
 
     @Test
     void getFileById_callsRepositoryWithExactId() {
         // GIVEN
         when(fileRepository.findById("F1")).thenReturn(Optional.of(fileEntity));
-        when(fileMapper.toResponse(fileEntity)).thenReturn(fileResponse);
+        when(fileMapper.toFileResponse(fileEntity)).thenReturn(fileResponse);
 
         // WHEN
         fileService.getFileById("F1");

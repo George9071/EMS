@@ -217,6 +217,17 @@ class ProjectServiceTest {
         project.setParticipants(10);
         project.setMaxParticipants(10);
 
+        // Populate the project's employee assignments so that getEmployees().size() == 10
+        for (int i = 0; i < 10; i++) {
+            Employee other = Employee.builder().code("EMP" + (100 + i)).projects(new ArrayList<>()).build();
+            EmployeeProject ep = EmployeeProject.builder()
+                    .employee(other)
+                    .project(project)
+                    .joinedAt(LocalDate.now())
+                    .build();
+            project.getEmployees().add(ep);
+        }
+
         when(projectRepository.findById("PRJ001")).thenReturn(Optional.of(project));
         when(employeeRepository.findById("EMP001")).thenReturn(Optional.of(employee));
 
