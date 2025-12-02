@@ -1,5 +1,7 @@
 package com._6.ems.utils;
 
+import com._6.ems.exception.AppException;
+import com._6.ems.exception.ErrorCode;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import lombok.AccessLevel;
@@ -11,9 +13,11 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Utility class that provides helper methods for validating and uploading files to Cloudinary.
@@ -112,42 +116,27 @@ public class CloudinaryUtil {
         };
     }
 
-    /**
-     * Uploads a file to Cloudinary after validating and determining its format.
-     *
-     * @param file   the {@link MultipartFile} to upload
-     * @param format the target format for Cloudinary (e.g., "pdf", "jpg", "png")
-     * @return the public secure URL of the uploaded file on Cloudinary
-     * @throws IOException if file reading or upload fails
-     */
-    public String uploadToCloudinary(MultipartFile file, String format) throws IOException {
-        String extension = getExtension(file.getOriginalFilename());
-
-        // Special handling: convert JFIF images to JPG before upload
-        if (extension.equals("jfif")) {
-            BufferedImage image = ImageIO.read(file.getInputStream());
-            ByteArrayOutputStream os = new ByteArrayOutputStream();
-            ImageIO.write(image, "jpg", os);
-            byte[] jpegBytes = os.toByteArray();
-
-            // Upload converted image bytes to Cloudinary
-            Map uploadResult = cloudinary.uploader().upload(jpegBytes, ObjectUtils.asMap(
-                    "resource_type", "image", // classify as image
-                    "format", "jpg"
-            ));
-            return (String) uploadResult.get("secure_url");
+    public String uploadToCloudinary(MultipartFile file, String folder) throws IOException {
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("File phải là ảnh");
         }
 
-        // For all other file types, upload directly
-        Map uploadResult = cloudinary.uploader().upload(
-                file.getBytes(),
-                ObjectUtils.asMap(
-                        "resource_type", format.equals("jpg") || format.equals("png") ? "image" : "raw",
-                        "format", format
-                )
-        );
+        String folderPath = folder + "/";
 
-        // Return Cloudinary-hosted file URL
-        return (String) uploadResult.get("secure_url");
+        String publicId = UUID.randomUUID().toString();
+
+        Map<String, Object> options = new HashMap<>();
+        options.put("resource_type", "image");
+        options.put("folder",  folderPath);
+        options.put("public_id", publicId);
+        options.put("overwrite", true);
+
+        try {
+            Map<String, Object> uploadResult = cloudinary.uploader().upload(file.getBytes(), options);
+            return uploadResult.get("url").toString();
+        } catch (IOException e) {
+            throw new AppException(ErrorCode.IO_EXCEPTION);
+        }
     }
 }

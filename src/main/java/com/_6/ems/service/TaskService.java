@@ -157,13 +157,12 @@ public class TaskService {
                 .orElseThrow(() -> new AppException(ErrorCode.TASK_NOT_FOUND));
 
         cloudinaryUtil.validateFile(file);
-        String format = cloudinaryUtil.getUploadFormat(file.getContentType(), file.getOriginalFilename());
 
 
         try {
             AiReviewResponse aiReview = aiService.getAiReviewTask(file, task);
 
-            String fileUrl = cloudinaryUtil.uploadToCloudinary(file, format);
+            String fileUrl = cloudinaryUtil.uploadToCloudinary(file, "task");
 
             File entity = File.builder()
                     .name(file.getOriginalFilename())

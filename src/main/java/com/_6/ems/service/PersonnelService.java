@@ -155,10 +155,8 @@ public class PersonnelService {
 
         cloudinaryUtil.validateFile(file);
 
-        String format = cloudinaryUtil.getUploadFormat(file.getContentType(), file.getOriginalFilename());
-
         try {
-            String imageUrl = cloudinaryUtil.uploadToCloudinary(file, format);
+            String imageUrl = cloudinaryUtil.uploadToCloudinary(file, "avatar");
 
             personnel.setAvatar(imageUrl);
             personnelRepository.save(personnel);

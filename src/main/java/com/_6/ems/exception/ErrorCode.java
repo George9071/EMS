@@ -113,6 +113,8 @@ public enum ErrorCode {
     // 10xxx - Privilege & Role
     // =====================================================
     SALARY_NOT_FOUND(10001, "Salary not found", HttpStatus.NOT_FOUND),
+
+    IO_EXCEPTION(10002, "Không thể tải ảnh lên Cloudinary", HttpStatus.INTERNAL_SERVER_ERROR),
     ;
 
     ErrorCode(int code, String message, HttpStatusCode statusCode) {
