@@ -118,9 +118,6 @@ public class CloudinaryUtil {
 
     public String uploadToCloudinary(MultipartFile file, String folder) throws IOException {
         String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new IllegalArgumentException("File phải là ảnh");
-        }
 
         String folderPath = folder + "/";
 
