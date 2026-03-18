@@ -11,7 +11,7 @@ spring:
     password: ${DB_PASSWORD}
   ai:
     openai:
-      api-key: AIzaSyA4tLJw2HgjtpLY9qh3owPGGzRq_ZPI8Ew
+      api-key: ${API_KEY}
       chat:
         base-url: https://generativelanguage.googleapis.com
         completions-path: /v1beta/openai/chat/completions
